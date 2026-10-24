@@ -1,0 +1,48 @@
+---
+import SectionHead from "./SectionHead.astro";
+import { steps } from "../data/services";
+import { typo } from "../lib/typo";
+---
+
+<section aria-labelledby="process-title" id="process" class="scroll-mt-16 py-20 sm:py-28">
+  <div class="container-page">
+    <SectionHead
+      id="process-title"
+      index="03"
+      eyebrow="Как работаю"
+      title="Пять шагов от разговора до запуска"
+      intro="На каждом шаге вы видите результат и можете поправить курс, прежде чем двигаться дальше."
+    />
+
+    {/* На телефоне шаги идут столбцом вдоль линии, на широком экране — строкой. */}
+    <div class="relative mt-12 sm:mt-16">
+      <span
+        class="absolute top-2 bottom-2 left-[1.0625rem] w-px bg-line lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-px lg:w-auto"
+        aria-hidden="true"></span>
+      <ol class="relative grid gap-10 lg:grid-cols-5 lg:gap-8">
+        {
+          steps.map((step, i) => (
+            <li class="grid grid-cols-[2.25rem_1fr] gap-x-5 lg:block" data-reveal style={`--reveal-delay: ${i * 70}ms`}>
+              <span
+                class:list={[
+                  "grid size-[2.25rem] place-items-center rounded-full font-mono text-sm font-semibold",
+                  i === 0 ? "bg-accent text-ink" : "border border-line bg-paper text-ink",
+                ]}
+                aria-hidden="true"
+              >
+                {i + 1}
+              </span>
+              <div class="lg:mt-6">
+                <h3 class="text-lg font-semibold tracking-[-0.01em]">
+                  <span class="sr-only">Шаг {i + 1}. </span>
+                  {step.title}
+                </h3>
+                <p class="mt-2 leading-relaxed text-ink-2" set:html={typo(step.text)} />
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,33 @@
+---
+import Logo from "./Logo.astro";
+import Icon from "./Icon.astro";
+import { site } from "../data/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="on-dark bg-ink text-paper">
+  <div class="container-page">
+    <div class="flex flex-col gap-6 border-t border-line-dark py-8 sm:flex-row sm:items-center">
+      <div class="flex items-center gap-3">
+        <Logo class="size-8 [&_rect:first-child]:fill-[#262624]" />
+        <p class="text-sm text-muted-dark">© {year} {site.name} · {site.role}</p>
+      </div>
+      <div class="flex items-center gap-6 text-sm sm:ml-auto">
+        <a
+          href={site.github}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-11 items-center text-muted-dark underline decoration-paper/20 underline-offset-4 hover:text-paper"
+        >
+          GitHub
+          <span class="sr-only">(откроется в новой вкладке)</span>
+        </a>
+        <a href="#top" class="inline-flex min-h-11 items-center gap-1.5 text-muted-dark hover:text-paper">
+          Наверх
+          <Icon name="arrow-up" class="size-4" />
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

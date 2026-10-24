@@ -1,0 +1,24 @@
+---
+// Шапка секции: номер и название моноширинным, заголовок, вводная.
+import { typo } from "../lib/typo";
+
+interface Props {
+  id: string;
+  index: string;
+  eyebrow: string;
+  title: string;
+  intro?: string;
+}
+const { id, index, eyebrow, title, intro } = Astro.props;
+---
+
+<div class="grid gap-6 lg:grid-cols-12 lg:items-end" data-reveal>
+  <div class="lg:col-span-7">
+    <p class="eyebrow flex items-center gap-3 text-muted">
+      <span class="rounded bg-ink px-1.5 py-0.5 text-paper">{index}</span>
+      {eyebrow}
+    </p>
+    <h2 id={id} class="mt-5 text-4xl leading-[1.08] font-bold tracking-[-0.03em] text-balance sm:text-5xl" set:html={typo(title)} />
+  </div>
+  {intro && <p class="text-lg leading-relaxed text-ink-2 lg:col-span-5" set:html={typo(intro)} />}
+</div>

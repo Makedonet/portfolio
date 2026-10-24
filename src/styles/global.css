@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* Палитра: тёплая бумага, почти чёрные чернила и один акцент — маркерный
+   жёлтый. Работы на скриншотах сами по себе яркие (оранжевый, красный, зелёный,
+   синий), поэтому фон нейтральный, а жёлтого нет ни в одной из них.
+   Жёлтый на светлом фоне не читается: только заливкой под чёрным текстом,
+   а текстом — на тёмных блоках. Контраст пар (WCAG):
+   ink/paper 16.8, muted/paper 6.1, ink/accent 13.3, accent/ink 13.3,
+   muted-dark/ink 7.4, ok-text/paper 5.1. */
+@theme {
+  --color-paper: #f3f2ec;
+  --color-surface: #ffffff;
+  --color-ink: #111110;
+  --color-ink-2: #262624;
+  --color-muted: #5c5b55;
+  --color-muted-dark: #a3a29b;
+  --color-line: #dedcd3;
+  --color-line-dark: #2e2e2b;
+  --color-accent: #ffd43b;
+  --color-ok: #1f9d55;
+  --color-ok-text: #13753d;
+
+  --font-sans: var(--font-onest);
+  --font-mono: var(--font-jetbrains);
+
+  --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 5rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  /* Кольцо фокуса видно и на бумаге, и на чёрных блоках: чёрный контур с
+     жёлтой подложкой-тенью. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px var(--color-accent);
+    border-radius: 6px;
+  }
+  .on-dark :focus-visible {
+    outline-color: var(--color-accent);
+    box-shadow: none;
+  }
+
+  a,
+  button {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Кнопки: высота 48px — с запасом выше минимума для пальца (44px). */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding-inline: 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.2;
+    transition:
+      background-color 0.2s var(--ease-out),
+      border-color 0.2s var(--ease-out),
+      color 0.2s var(--ease-out),
+      translate 0.2s var(--ease-out);
+  }
+  .btn:active {
+    translate: 0 1px;
+  }
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-primary:hover {
+    background: var(--color-ink-2);
+  }
+  .btn-secondary {
+    border: 1px solid rgb(17 17 16 / 0.2);
+    color: var(--color-ink);
+  }
+  .btn-secondary:hover {
+    border-color: rgb(17 17 16 / 0.5);
+  }
+  .btn-accent {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+  .btn-accent:hover {
+    background: #ffe169;
+  }
+  .btn-ghost-dark {
+    border: 1px solid rgb(243 242 236 / 0.25);
+    color: var(--color-paper);
+  }
+  .btn-ghost-dark:hover {
+    border-color: rgb(243 242 236 / 0.6);
+  }
+
+  /* Надзаголовок секции: моноширинный, с номером. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* Маркер под словом: заливка проводится слева направо при загрузке. Без
+     скрипта и при «уменьшить движение» — сразу закрашено. */
+  .marker {
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 100% 0.42em;
+    padding-inline: 0.06em;
+    margin-inline: -0.06em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .marker {
+      background-size: 0% 0.42em;
+      animation: marker-draw 0.9s var(--ease-out) 0.35s forwards;
+    }
+  }
+  @keyframes marker-draw {
+    to {
+      background-size: 100% 0.42em;
+    }
+  }
+
+  /* Появление блоков при прокрутке. Начальное состояние включает класс .js на
+     <html>: без скрипта всё видно сразу. */
+  @media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal] {
+      opacity: 0;
+      translate: 0 1.25rem;
+      transition:
+        opacity 0.6s var(--ease-out),
+        translate 0.6s var(--ease-out);
+      transition-delay: var(--reveal-delay, 0ms);
+    }
+    .js [data-reveal].is-visible {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}

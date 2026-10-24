@@ -1,0 +1,100 @@
+---
+import "../styles/global.css";
+import { Font } from "astro:assets";
+import { phone, site } from "../data/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Страница не для поиска (404) — без canonical и микроразметки. */
+  noindex?: boolean;
+}
+
+const { title = site.title, description = site.description, noindex = false } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = new URL("/og.jpg", Astro.site).href;
+const home = new URL("/", Astro.site).href;
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": `${home}#maksim`,
+      name: site.name,
+      jobTitle: "Веб-разработчик",
+      description: site.role,
+      telephone: phone.e164,
+      url: home,
+      image: ogImage,
+      sameAs: [site.github],
+      knowsAbout: ["Разработка сайтов", "Astro", "TypeScript", "Tailwind CSS", "SEO", "Веб-доступность"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${home}#website`,
+      url: home,
+      name: site.title,
+      inLanguage: "ru",
+      author: { "@id": `${home}#maksim` },
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f3f2ec" />
+    {/* Иначе Safari сам превращает в ссылки цифры вроде «314 → 47». */}
+    <meta name="format-detection" content="telephone=no" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:site_name" content={site.title} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={site.title} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/* Onest стоит на заголовке первого экрана — грузим заранее. Моноширинный
+        нужен только подписям: его не предзагружаем, чтобы не делил канал с
+        основным шрифтом. */}
+    <Font cssVariable="--font-onest" preload />
+    <Font cssVariable="--font-jetbrains" />
+
+    {!noindex && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}
+
+    <script is:inline>
+      // Класс включает начальные состояния анимаций. Без скрипта страница
+      // видна целиком сразу.
+      document.documentElement.classList.add("js");
+    </script>
+  </head>
+  <body class="min-h-dvh bg-paper text-ink">
+    <a
+      href="#main"
+      class="sr-only z-50 rounded-full bg-ink px-5 py-3 font-medium text-paper focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >К содержанию</a
+    >
+    <slot />
+    <script>
+      import "../scripts/reveal";
+    </script>
+  </body>
+</html>

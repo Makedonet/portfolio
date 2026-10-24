@@ -1,0 +1,27 @@
+---
+// Значение метрики. «314 → 47 КБ» рисуется со стрелкой-SVG: глифа «→» нет
+// в наборах шрифтов сайта, и он подтягивался бы системным шрифтом. Для
+// скринридера — словами.
+interface Props {
+  value: string;
+}
+const { value } = Astro.props;
+const [before, after] = value.split(" → ");
+---
+
+{
+  after ? (
+    <>
+      <span aria-hidden="true" class="inline-flex items-center gap-[0.3em]">
+        {before}
+        <svg viewBox="0 0 24 24" class="size-[0.75em] text-muted" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12h15M13 6l6 6-6 6" />
+        </svg>
+        {after}
+      </span>
+      <span class="sr-only">было {before}, стало {after}</span>
+    </>
+  ) : (
+    value
+  )
+}

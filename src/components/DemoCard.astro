@@ -1,0 +1,53 @@
+---
+import BrowserFrame from "./BrowserFrame.astro";
+import Icon from "./Icon.astro";
+import type { Demo } from "../data/works";
+import { typo } from "../lib/typo";
+
+interface Props {
+  demo: Demo;
+  delay?: number;
+}
+
+const { demo, delay = 0 } = Astro.props;
+const headingId = `demo-${demo.id}`;
+---
+
+<article aria-labelledby={headingId} class="flex flex-col" data-reveal style={`--reveal-delay: ${delay}ms`}>
+  <a href={demo.url} target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true" class="group block">
+    <BrowserFrame
+      src={demo.desktop}
+      alt=""
+      url={demo.urlLabel}
+      sizes="(min-width: 1280px) 36rem, (min-width: 768px) 45vw, 92vw"
+      class="transition-transform duration-500 ease-[var(--ease-out)] group-hover:-translate-y-1"
+    />
+  </a>
+  <div class="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+    <h4 id={headingId} class="text-2xl font-bold tracking-[-0.02em]">{demo.title}</h4>
+    <span class="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs font-medium text-muted">Демо</span>
+  </div>
+  <p class="mt-1 text-muted" set:html={typo(demo.kind)} />
+  <p class="mt-4 leading-relaxed text-ink-2" set:html={typo(demo.summary)} />
+  <div class="mt-5 flex flex-wrap gap-x-6 gap-y-2">
+    <a
+      href={demo.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="group inline-flex min-h-11 items-center gap-2 font-semibold underline decoration-ink/25 decoration-2 underline-offset-[6px] hover:decoration-ink"
+    >
+      Открыть демо
+      <Icon name="arrow-up-right" class="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      <span class="sr-only">(откроется в новой вкладке)</span>
+    </a>
+    <a
+      href={demo.code}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex min-h-11 items-center gap-2 text-muted underline decoration-ink/20 underline-offset-[6px] hover:text-ink hover:decoration-ink"
+    >
+      Код на GitHub
+      <span class="sr-only">(откроется в новой вкладке)</span>
+    </a>
+  </div>
+</article>

@@ -1,0 +1,58 @@
+---
+import Logo from "./Logo.astro";
+import Icon from "./Icon.astro";
+import { contacts, nav, phone, site } from "../data/site";
+
+const telegram = contacts.find((c) => c.id === "telegram")!;
+---
+
+<header class="sticky top-0 z-30 border-b border-line/80 bg-paper/95 supports-[backdrop-filter]:bg-paper/85 supports-[backdrop-filter]:backdrop-blur">
+  <div class="container-page flex h-16 items-center gap-4 lg:h-[4.5rem]">
+    <a href="#top" class="-m-1 flex items-center gap-3 rounded-lg p-1">
+      <Logo class="size-9 lg:size-10" />
+      <span class="leading-tight">
+        <span class="block text-[1.0625rem] font-semibold tracking-tight">{site.name}</span>
+        <span class="block text-xs text-muted">сайты под ключ</span>
+        <span class="sr-only">— в начало страницы</span>
+      </span>
+    </a>
+
+    <nav aria-label="Разделы страницы" class="ml-auto hidden lg:block">
+      <ul class="flex items-center gap-1">
+        {
+          nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="rounded-lg px-3 py-2 text-[0.9375rem] text-ink-2 transition-colors duration-200 hover:bg-ink/5 hover:text-ink"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2 lg:ml-4">
+      <a
+        href={telegram.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="grid size-11 place-items-center rounded-full border border-line bg-surface text-ink transition-colors duration-200 hover:border-ink/30"
+        title={telegram.title}
+      >
+        <Icon name="telegram" class="size-5" label={`${telegram.title} (откроется в новой вкладке)`} />
+      </a>
+      <a
+        href={phone.href}
+        class="flex h-11 items-center gap-2 rounded-full bg-ink px-3.5 text-sm font-medium text-paper transition-colors duration-200 hover:bg-ink-2 sm:px-4"
+        title={`Позвонить: ${phone.display}`}
+      >
+        <Icon name="phone" class="size-4" />
+        <span class="sm:hidden">Позвонить</span>
+        <span class="hidden sm:inline">{phone.display}</span>
+      </a>
+    </div>
+  </div>
+</header>

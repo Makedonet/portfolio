@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Logo from "../components/Logo.astro";
+import { site } from "../data/site";
+---
+
+<Layout title={`Страница не найдена — ${site.title}`} noindex>
+  <main id="main" class="container-page grid min-h-dvh place-content-center justify-items-start gap-6 py-20">
+    <Logo class="size-12" />
+    <p class="eyebrow text-muted">Ошибка 404</p>
+    <h1 class="text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Такой страницы нет</h1>
+    <p class="max-w-md text-lg text-ink-2">Возможно, ссылка устарела. Всё главное — на главной: работы, услуги и контакты.</p>
+    <a href="/" class="btn btn-primary">На главную</a>
+  </main>
+</Layout>
