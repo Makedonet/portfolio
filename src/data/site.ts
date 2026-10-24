@@ -20,10 +20,12 @@ export const phone = {
 };
 
 export type Contact = {
-  id: "phone" | "telegram" | "whatsapp";
+  id: "phone" | "telegram" | "whatsapp" | "max";
   label: string;
+  /** Что видно рядом с названием: номер или ник. */
+  handle?: string;
   href: string;
-  /** Подпись для скринридера и подсказки: куда ведёт ссылка. */
+  /** Подсказка при наведении: куда ведёт ссылка. */
   title: string;
   external: boolean;
 };
@@ -33,18 +35,29 @@ export const contacts: Contact[] = [
   {
     id: "telegram",
     label: "Telegram",
-    href: `https://t.me/+${phoneDigits}`,
-    title: "Написать в Telegram",
+    handle: "@medve_ev",
+    href: "https://t.me/medve_ev",
+    title: "Написать в Telegram: @medve_ev",
+    external: true,
+  },
+  {
+    id: "max",
+    label: "MAX",
+    href: "https://max.ru/u/f9LHodD0cOKIWH0rITWLam86tSI2bQQohoCkcbhq9OVPdMgj7kl4XwP-M7w",
+    title: "Написать в MAX",
     external: true,
   },
   {
     id: "whatsapp",
     label: "WhatsApp",
+    handle: phone.display,
     href: `https://wa.me/${phoneDigits}`,
     title: "Написать в WhatsApp",
     external: true,
   },
 ];
+
+export const contact = (id: Contact["id"]) => contacts.find((c) => c.id === id)!;
 
 export const nav = [
   { href: "#works", label: "Работы" },

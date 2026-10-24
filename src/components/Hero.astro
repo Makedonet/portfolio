@@ -1,76 +1,134 @@
 ---
-import BrowserFrame from "./BrowserFrame.astro";
-import PhoneFrame from "./PhoneFrame.astro";
+import LiveWindow from "./LiveWindow.astro";
 import Icon from "./Icon.astro";
 import MetricValue from "./MetricValue.astro";
 import { facts, works } from "../data/works";
-import { typo } from "../lib/typo";
 import { phone } from "../data/site";
+import { typo } from "../lib/typo";
 
-const mc = works.find((w) => w.id === "mc-project")!;
-const moyka = works.find((w) => w.id === "moyka")!;
-const shino = works.find((w) => w.id === "shinomontazh")!;
+const work = (id: string) => works.find((w) => w.id === id)!;
+const mc = work("mc-project");
+const moyka = work("moyka");
+const shino = work("shinomontazh");
+
+// Слова заголовка поднимаются из-под маски по очереди (global.css, .hero-word).
+const title = ["Сайты"];
+const marked = ["под", "ключ"];
+const subtitle = ["от идеи", "до первых", "заявок"];
 ---
 
-<section id="top" aria-labelledby="hero-title" class="relative">
+<section id="top" aria-labelledby="hero-title" class="relative overflow-x-clip">
   <div class="container-page grid gap-14 pt-10 pb-16 sm:pt-14 lg:grid-cols-12 lg:items-center lg:gap-8 lg:pt-16 lg:pb-20">
-    <div class="lg:col-span-6 xl:col-span-6">
-      <p class="eyebrow text-muted">Максим — веб-разработчик</p>
-      <h1 id="hero-title" class="mt-5 font-bold tracking-[-0.035em]">
+    <div class="lg:col-span-6">
+      <h1 id="hero-title" class="font-bold tracking-[-0.035em]">
         <span class="block text-[3.25rem] leading-[1.02] sm:text-7xl xl:text-[5.25rem]">
-          Сайты <span class="marker whitespace-nowrap">под ключ</span>
+          {
+            title.map((word, i) => (
+              <span class="hero-mask">
+                <span class="hero-word" style={`--i: ${i}`}>
+                  {word}
+                </span>
+              </span>
+            ))
+          }{" "}
+          <span class="marker whitespace-nowrap">
+            {
+              marked.map((word, i) => (
+                <>
+                  <span class="hero-mask">
+                    <span class="hero-word" style={`--i: ${i + title.length}`}>
+                      {word}
+                    </span>
+                  </span>
+                  {i < marked.length - 1 && " "}
+                </>
+              ))
+            }
+          </span>
         </span>
         <span class="mt-3 block text-[1.75rem] leading-tight tracking-[-0.025em] text-ink-2 sm:text-4xl xl:text-[2.625rem]">
-          от&nbsp;идеи до&nbsp;первых заявок
+          {
+            subtitle.map((word, i) => (
+              <>
+                <span class="hero-mask">
+                  <span class="hero-word" style={`--i: ${i + 4}`}>
+                    {word}
+                  </span>
+                </span>
+                {i < subtitle.length - 1 && " "}
+              </>
+            ))
+          }
         </span>
       </h1>
       <p
-        class="mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-2 sm:text-xl sm:leading-relaxed"
+        class="hero-fade mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-2 sm:text-xl sm:leading-relaxed"
+        style="--d: 0.55s"
         set:html={typo(
-          "Беру на себя всё: структуру, дизайн, разработку, формы, аналитику, хостинг и поддержку. Вы получаете сайт, который быстро открывается, не теряет заявки и легко правится.",
+          "Я Максим. Беру на себя всё: структуру, дизайн, разработку, формы, аналитику, хостинг и поддержку. Вы получаете сайт, который быстро открывается, не теряет заявки и легко правится.",
         )}
       />
-      <div class="mt-9 flex flex-wrap items-center gap-3">
+      <div class="hero-fade mt-9 flex flex-wrap items-center gap-3" style="--d: 0.7s">
         <a href="#contact" class="btn btn-primary">Обсудить проект</a>
         <a href="#works" class="btn btn-secondary">
           Смотреть работы
           <Icon name="arrow-down" class="size-4" />
         </a>
       </div>
-      <p class="mt-6 text-[0.9375rem] text-muted">
+      <p class="hero-fade mt-6 text-[0.9375rem] text-muted" style="--d: 0.85s">
         Или сразу позвоните:{" "}
-        <a href={phone.href} class="font-medium text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
-          >{phone.display}</a
-        >
+        <a href={phone.href} class="link-line font-medium text-ink">{phone.display}</a>
       </p>
     </div>
 
-    {/* Три работы одним кадром: окно позади видно только на широком экране,
-        на телефоне остаются главное окно и телефон. */}
-    <div class="relative lg:col-span-6 xl:col-span-6" aria-label="Примеры работ" role="group">
-      <div class="relative mx-auto max-w-[38rem] pb-8 lg:mr-0 lg:max-w-none lg:pt-14 lg:pb-10">
-        <BrowserFrame
-          src={moyka.desktop}
-          alt=""
-          url={moyka.urlLabel}
-          sizes="26rem"
-          class="absolute top-0 right-0 hidden w-[68%] lg:block"
-        />
-        <BrowserFrame
-          src={mc.desktop}
-          alt={`Главный экран сайта ${mc.urlLabel}`}
-          url={mc.urlLabel}
-          sizes="(min-width: 1280px) 34rem, (min-width: 1024px) 44vw, (min-width: 640px) 36rem, 92vw"
-          priority
-          class="relative lg:w-[86%]"
-        />
-        <PhoneFrame
-          src={shino.mobile}
-          alt={`Сайт ${shino.urlLabel} на телефоне`}
-          sizes="(min-width: 1024px) 9rem, 24vw"
-          eager
-          class="absolute right-[3%] bottom-0 w-[25%] lg:right-0 lg:w-[23%]"
-        />
+    {/* Три работы одним кадром, и все три «играют». Окно позади видно только
+        на широком экране. Слои расходятся под курсором (data-depth) и при
+        прокрутке (data-parallax); пауза — кнопкой в строке адреса. */}
+    <div class="relative lg:col-span-6" role="group" aria-label="Примеры работ" data-live-group data-tilt="7">
+      <div class="relative mx-auto max-w-[38rem] pb-8 lg:mr-0 lg:max-w-none lg:pt-14 lg:pb-10" data-tilt-target>
+        <div class="absolute top-0 right-0 hidden w-[68%] lg:block" data-depth="14" data-parallax="-10">
+          <div class="hero-pop" style="--d: 0.5s; --r: 2deg">
+            <LiveWindow
+              scenes={moyka.screens.desktop}
+              device="desktop"
+              sizes="26rem"
+              label={`Сайт ${moyka.urlLabel} листается сам`}
+              href={moyka.url}
+              delay={2.4}
+            />
+          </div>
+        </div>
+        <div class="relative lg:w-[86%]" data-depth="24" data-parallax="-3">
+          <div class="hero-pop" style="--d: 0.3s">
+            <LiveWindow
+              scenes={mc.screens.desktop}
+              device="desktop"
+              sizes="(min-width: 1280px) 34rem, (min-width: 1024px) 44vw, (min-width: 640px) 36rem, 92vw"
+              label={`Сайт ${mc.urlLabel} листается сам`}
+              href={mc.url}
+              priority
+              toggle="окна на первом экране"
+              delay={0.4}
+            />
+          </div>
+        </div>
+        {
+          shino.screens.mobile && (
+            <div class="absolute right-[3%] bottom-0 w-[25%] lg:right-0 lg:w-[23%]" data-depth="38" data-parallax="-26">
+              <div class="hero-pop" style="--d: 0.65s; --r: -3deg">
+                <LiveWindow
+                  scenes={[shino.screens.mobile]}
+                  device="mobile"
+                  sizes="(min-width: 1024px) 9rem, 24vw"
+                  label={`Мобильная версия ${shino.urlLabel} листается сама`}
+                  href={shino.url}
+                  eager
+                  delay={1.4}
+                />
+              </div>
+            </div>
+          )
+        }
       </div>
     </div>
   </div>
@@ -81,7 +139,7 @@ const shino = works.find((w) => w.id === "shinomontazh")!;
         facts.map((fact, i) => (
           <div
             class:list={[
-              "flex flex-col gap-2 py-6 sm:py-8",
+              "fact flex flex-col gap-2 py-6 sm:py-8",
               i % 2 === 1 && "border-l border-line pl-5 sm:pl-8",
               i % 2 === 0 && "pr-5 sm:pr-8",
               i >= 2 && "border-t border-line lg:border-t-0",

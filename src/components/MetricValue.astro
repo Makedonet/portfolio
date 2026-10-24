@@ -1,12 +1,22 @@
 ---
-// Значение метрики. «314 → 47 КБ» рисуется со стрелкой-SVG: глифа «→» нет
-// в наборах шрифтов сайта, и он подтягивался бы системным шрифтом. Для
-// скринридера — словами.
+// Значение метрики. Первое число досчитывает при прокрутке (data-count,
+// motion.ts); в «314 → 47 КБ» вес сам уменьшается с 314 до 47. Стрелка —
+// SVG: глифа «→» нет в наборах шрифтов сайта. Для скринридера — словами.
 interface Props {
   value: string;
 }
 const { value } = Astro.props;
 const [before, after] = value.split(" → ");
+
+/** Разбивает строку на первое целое число и остальное. Ноль и диапазоны
+ *  («90–91») не считаем: на полпути выходило бы «45–91». */
+const split = (text: string) => {
+  const match = text.match(/^(\D*?)(\d+)(.*)$/);
+  if (!match || match[2] === "0" || /^[–-]\d/.test(match[3]!)) return null;
+  return { head: match[1], number: match[2], tail: match[3] };
+};
+const plain = after ? null : split(value);
+const shrink = after ? split(after) : null;
 ---
 
 {
@@ -17,9 +27,30 @@ const [before, after] = value.split(" → ");
         <svg viewBox="0 0 24 24" class="size-[0.75em] text-muted" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 12h15M13 6l6 6-6 6" />
         </svg>
-        {after}
+        {shrink ? (
+          <span>
+            {shrink.head}
+            <span data-count={shrink.number} data-count-from={before?.match(/\d+/)?.[0]}>
+              {shrink.number}
+            </span>
+            {shrink.tail}
+          </span>
+        ) : (
+          after
+        )}
       </span>
-      <span class="sr-only">было {before}, стало {after}</span>
+      <span class="sr-only">
+        было {before}, стало {after}
+      </span>
+    </>
+  ) : plain ? (
+    <>
+      <span aria-hidden="true">
+        {plain.head}
+        <span data-count={plain.number}>{plain.number}</span>
+        {plain.tail}
+      </span>
+      <span class="sr-only">{value}</span>
     </>
   ) : (
     value

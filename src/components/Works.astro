@@ -9,10 +9,8 @@ import { demos, works } from "../data/works";
   <div class="container-page">
     <SectionHead
       id="works-title"
-      index="01"
-      eyebrow="Работы"
       title="Сайты для реального бизнеса"
-      intro="Три сайта действующих компаний и концепт редизайна. У каждого — что сделано и цифры из замеров, а не из головы."
+      intro="Три сайта действующих компаний и концепт редизайна. В окнах сайты листаются сами, наведите курсор — и можно перемотать. Цифры — из замеров, а не из головы."
     />
 
     <div class="mt-12 sm:mt-16">
@@ -20,9 +18,9 @@ import { demos, works } from "../data/works";
     </div>
 
     <div class="border-t border-line pt-14 pb-20 sm:pt-20 sm:pb-28">
-      <h3 class="eyebrow text-muted" data-reveal>Демо-проекты</h3>
-      <div class="mt-8 grid gap-14 md:grid-cols-2 md:gap-10 lg:gap-14">
-        {demos.map((demo, i) => <DemoCard demo={demo} delay={i * 80} />)}
+      <h3 class="text-3xl font-bold tracking-[-0.025em] sm:text-[2.125rem]" data-split>Демо-проекты</h3>
+      <div class="mt-10 grid gap-16 md:grid-cols-2 md:gap-10 lg:gap-14">
+        {demos.map((demo, index) => <DemoCard demo={demo} index={index} />)}
       </div>
     </div>
   </div>

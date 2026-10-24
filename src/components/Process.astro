@@ -8,27 +8,29 @@ import { typo } from "../lib/typo";
   <div class="container-page">
     <SectionHead
       id="process-title"
-      index="03"
-      eyebrow="Как работаю"
       title="Пять шагов от разговора до запуска"
       intro="На каждом шаге вы видите результат и можете поправить курс, прежде чем двигаться дальше."
     />
 
-    {/* На телефоне шаги идут столбцом вдоль линии, на широком экране — строкой. */}
-    <div class="relative mt-12 sm:mt-16">
+    {/* Линия дорисовывается при прокрутке, кружки загораются, когда она до них
+        доходит (motion.ts). На телефоне шаги идут столбцом, на широком экране —
+        строкой. Без скрипта линия просто видна целиком. */}
+    <div class="relative mt-12 sm:mt-16" data-process>
       <span
-        class="absolute top-2 bottom-2 left-[1.0625rem] w-px bg-line lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-px lg:w-auto"
+        class="absolute top-2 bottom-2 left-[1.0625rem] w-px origin-top bg-line lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-px lg:w-auto lg:origin-left"
         aria-hidden="true"></span>
-      <ol class="relative grid gap-10 lg:grid-cols-5 lg:gap-8">
+      <span
+        class="absolute top-2 bottom-2 left-[1.0625rem] w-[2px] -translate-x-[0.5px] origin-top bg-ink lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-[2px] lg:w-auto lg:origin-left lg:translate-x-0 lg:-translate-y-[0.5px]"
+        aria-hidden="true"
+        data-process-line></span>
+      <ol class="relative grid gap-10 lg:grid-cols-5 lg:gap-8" data-stagger>
         {
           steps.map((step, i) => (
-            <li class="grid grid-cols-[2.25rem_1fr] gap-x-5 lg:block" data-reveal style={`--reveal-delay: ${i * 70}ms`}>
+            <li class="grid grid-cols-[2.25rem_1fr] gap-x-5 lg:block" data-step>
               <span
-                class:list={[
-                  "grid size-[2.25rem] place-items-center rounded-full font-mono text-sm font-semibold",
-                  i === 0 ? "bg-accent text-ink" : "border border-line bg-paper text-ink",
-                ]}
+                class="step-dot grid size-[2.25rem] place-items-center rounded-full border border-line bg-paper font-mono text-sm font-semibold text-ink"
                 aria-hidden="true"
+                data-step-dot
               >
                 {i + 1}
               </span>

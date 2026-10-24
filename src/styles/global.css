@@ -1,7 +1,10 @@
 @import "tailwindcss";
+/* Скрипты съёмки — не разметка: без этой строки Tailwind находит в них слова
+   вроде hidden и дописывает классы в CSS. */
+@source not "../../tools";
 
 /* Палитра: тёплая бумага, почти чёрные чернила и один акцент — маркерный
-   жёлтый. Работы на скриншотах сами по себе яркие (оранжевый, красный, зелёный,
+   жёлтый. Работы в окнах сами по себе яркие (оранжевый, красный, зелёный,
    синий), поэтому фон нейтральный, а жёлтого нет ни в одной из них.
    Жёлтый на светлом фоне не читается: только заливкой под чёрным текстом,
    а текстом — на тёмных блоках. Контраст пар (WCAG):
@@ -24,6 +27,7 @@
   --font-mono: var(--font-jetbrains);
 
   --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -82,8 +86,44 @@
     }
   }
 
-  /* Кнопки: высота 48px — с запасом выше минимума для пальца (44px). */
+  /* Шапка: при прокрутке (класс ставит motion.ts) плотнее фон и видна граница. */
+  [data-header] {
+    transition:
+      background-color 0.3s var(--ease-out),
+      border-color 0.3s var(--ease-out),
+      box-shadow 0.3s var(--ease-out);
+  }
+  [data-header].is-scrolled {
+    border-color: var(--color-line);
+    box-shadow: 0 6px 24px -18px rgb(17 17 16 / 0.35);
+  }
+
+  /* Ссылки меню: подчёркивание вырастает от центра. */
+  .nav-link {
+    position: relative;
+  }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.35rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transition: transform 0.35s var(--ease-out-expo);
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Кнопки: высота 48px — с запасом выше минимума для пальца (44px).
+     Подложка проезжает снизу вверх, текст и стрелка остаются над ней. */
   .btn {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -95,54 +135,196 @@
     font-size: 1rem;
     line-height: 1.2;
     transition:
-      background-color 0.2s var(--ease-out),
-      border-color 0.2s var(--ease-out),
-      color 0.2s var(--ease-out),
-      translate 0.2s var(--ease-out);
+      color 0.35s var(--ease-out),
+      border-color 0.35s var(--ease-out),
+      background-color 0.2s var(--ease-out) 0.25s;
   }
-  .btn:active {
-    translate: 0 1px;
+  .btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    transform: translateY(101%);
+    transition: transform 0.45s var(--ease-out-expo);
+  }
+  .btn:hover::before {
+    transform: translateY(0);
   }
   .btn-primary {
     background: var(--color-ink);
     color: var(--color-paper);
   }
+  .btn-primary::before {
+    background: var(--color-accent);
+  }
+  /* Фон догоняет заливку: иначе по краю скругления остаётся тёмный ободок. */
   .btn-primary:hover {
-    background: var(--color-ink-2);
+    color: var(--color-ink);
+    background-color: var(--color-accent);
   }
   .btn-secondary {
     border: 1px solid rgb(17 17 16 / 0.2);
     color: var(--color-ink);
   }
+  .btn-secondary::before {
+    background: var(--color-ink);
+  }
   .btn-secondary:hover {
-    border-color: rgb(17 17 16 / 0.5);
+    color: var(--color-paper);
+    border-color: var(--color-ink);
   }
   .btn-accent {
     background: var(--color-accent);
     color: var(--color-ink);
   }
+  .btn-accent::before {
+    background: var(--color-paper);
+  }
   .btn-accent:hover {
-    background: #ffe169;
+    background-color: var(--color-paper);
   }
   .btn-ghost-dark {
     border: 1px solid rgb(243 242 236 / 0.25);
     color: var(--color-paper);
   }
+  .btn-ghost-dark::before {
+    background: var(--color-paper);
+  }
   .btn-ghost-dark:hover {
-    border-color: rgb(243 242 236 / 0.6);
+    color: var(--color-ink);
+    border-color: var(--color-paper);
   }
 
-  /* Надзаголовок секции: моноширинный, с номером. */
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+  /* Текстовые ссылки со стрелкой: линия под текстом заполняется слева. */
+  .link-line {
+    background-image: linear-gradient(currentColor, currentColor), linear-gradient(rgb(17 17 16 / 0.2), rgb(17 17 16 / 0.2));
+    background-repeat: no-repeat;
+    background-position:
+      0 100%,
+      0 100%;
+    background-size:
+      0% 2px,
+      100% 2px;
+    padding-bottom: 0.2rem;
+    transition: background-size 0.45s var(--ease-out-expo);
+  }
+  .group:hover .link-line,
+  .link-line:hover {
+    background-size:
+      100% 2px,
+      100% 2px;
   }
 
-  /* Маркер под словом: заливка проводится слева направо при загрузке. Без
-     скрипта и при «уменьшить движение» — сразу закрашено. */
+  .link-line-dark {
+    background-image: linear-gradient(var(--color-accent), var(--color-accent)), linear-gradient(rgb(243 242 236 / 0.25), rgb(243 242 236 / 0.25));
+  }
+
+  /* Чипы технологий: при наведении — в цвет чернил. */
+  .chip {
+    transition:
+      background-color 0.25s var(--ease-out),
+      color 0.25s var(--ease-out),
+      border-color 0.25s var(--ease-out),
+      translate 0.25s var(--ease-out);
+  }
+  .chip:hover {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
+    translate: 0 -2px;
+  }
+
+  /* Ячейки цифр: акцентная черта снизу растёт при наведении. */
+  .fact {
+    position: relative;
+  }
+  .fact::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    background: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s var(--ease-out-expo);
+  }
+  .fact:hover::after {
+    transform: scaleX(1);
+  }
+  .fact dd {
+    transition: translate 0.4s var(--ease-out-expo);
+  }
+  .fact:hover dd {
+    translate: 0.35rem 0;
+  }
+
+  /* Услуги: жёлтая заливка поднимается снизу, заголовок сдвигается. */
+  .service {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .service::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.55s var(--ease-out-expo);
+  }
+  .service:hover::before {
+    transform: scaleY(1);
+  }
+  .service h3 {
+    transition: translate 0.45s var(--ease-out-expo);
+  }
+  .service:hover h3 {
+    translate: 0.4rem 0;
+  }
+  .service-arrow {
+    opacity: 0;
+    translate: -0.5rem 0.5rem;
+    transition:
+      opacity 0.3s var(--ease-out),
+      translate 0.45s var(--ease-out-expo);
+  }
+  .service:hover .service-arrow {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Этапы: кружок загорается, когда до него дошла линия (motion.ts), и
+     при наведении. */
+  .step-dot {
+    transition:
+      background-color 0.4s var(--ease-out),
+      border-color 0.4s var(--ease-out),
+      scale 0.4s var(--ease-out-expo);
+  }
+  [data-step].is-active .step-dot,
+  [data-step]:hover .step-dot {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  [data-step]:hover .step-dot {
+    scale: 1.15;
+  }
+
+  /* Кнопка паузы «живых окон» нужна, только когда окна движутся. */
+  [data-live-toggle] {
+    display: none;
+  }
+  .motion-on [data-live-toggle] {
+    display: grid;
+  }
+
+  /* Маркер под словом: заливка проводится слева направо после появления
+     заголовка. Без скрипта и при «уменьшить движение» — сразу закрашено. */
   .marker {
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
@@ -153,32 +335,66 @@
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
   }
+
+  /* Первый экран оживает на CSS — сразу при первой отрисовке, не дожидаясь
+     скрипта: слова поднимаются из-под маски, абзацы всплывают, окна
+     въезжают. Только при .js (его ставит скрипт в <head>) и без «уменьшить
+     движение»; иначе всё стоит на месте. */
+  .hero-mask {
+    display: inline-block;
+    overflow: clip;
+    vertical-align: bottom;
+    padding-block: 0.06em 0.14em;
+    margin-block: -0.06em -0.14em;
+  }
+  .hero-word {
+    display: inline-block;
+  }
   @media (prefers-reduced-motion: no-preference) {
+    .js .hero-word {
+      transform: translateY(110%);
+      animation: hero-rise 0.95s var(--ease-out-expo) forwards;
+      animation-delay: calc(0.05s + var(--i, 0) * 0.07s);
+    }
+    /* Абзац и кнопки въезжают только движением, без прозрачности: так текст
+       первого экрана виден с первой отрисовки, и именно он, а не кадр в окне,
+       дорисованный позже, засчитывается браузером как главный контент (LCP). */
+    .js .hero-fade {
+      transform: translateY(18px);
+      animation: hero-fade 0.9s var(--ease-out-expo) forwards;
+      animation-delay: var(--d, 0.4s);
+    }
+    /* Окна въезжают только движением, без прозрачности: постер главного окна —
+       самая крупная картинка экрана (LCP), он должен быть виден с первой
+       отрисовки. */
+    .js .hero-pop {
+      transform: translateY(32px) rotate(var(--r, 0deg)) scale(0.97);
+      animation: hero-pop 1.2s var(--ease-out-expo) forwards;
+      animation-delay: var(--d, 0.3s);
+    }
     .js .marker {
       background-size: 0% 0.42em;
-      animation: marker-draw 0.9s var(--ease-out) 0.35s forwards;
+      animation: marker-draw 0.8s var(--ease-out-expo) 0.55s forwards;
+    }
+  }
+  @keyframes hero-rise {
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes hero-fade {
+    to {
+      transform: none;
+    }
+  }
+  @keyframes hero-pop {
+    to {
+      transform: none;
     }
   }
   @keyframes marker-draw {
     to {
       background-size: 100% 0.42em;
-    }
-  }
-
-  /* Появление блоков при прокрутке. Начальное состояние включает класс .js на
-     <html>: без скрипта всё видно сразу. */
-  @media (prefers-reduced-motion: no-preference) {
-    .js [data-reveal] {
-      opacity: 0;
-      translate: 0 1.25rem;
-      transition:
-        opacity 0.6s var(--ease-out),
-        translate 0.6s var(--ease-out);
-      transition-delay: var(--reveal-delay, 0ms);
-    }
-    .js [data-reveal].is-visible {
-      opacity: 1;
-      translate: 0 0;
     }
   }
 }

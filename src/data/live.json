@@ -1,0 +1,308 @@
+{
+  "ti-desktop": {
+    "url": "ti-redesign-iota.vercel.app",
+    "device": "desktop",
+    "width": 1440,
+    "height": 9000,
+    "header": 0,
+    "strip": 66,
+    "stops": [
+      948,
+      1788,
+      2628,
+      3468,
+      4308,
+      5148,
+      5988,
+      6820,
+      7392,
+      8100
+    ],
+    "rawStops": [
+      1014,
+      6054,
+      6886,
+      7458
+    ]
+  },
+  "ti-mobile": {
+    "url": "ti-redesign-iota.vercel.app",
+    "device": "mobile",
+    "width": 390,
+    "height": 5200,
+    "header": 0,
+    "strip": 0,
+    "stops": [
+      620,
+      1240,
+      2019,
+      2798,
+      3577,
+      4356
+    ],
+    "rawStops": [
+      1240
+    ]
+  },
+  "omega-desktop": {
+    "url": "omegadet.vercel.app",
+    "device": "desktop",
+    "width": 1440,
+    "height": 5099,
+    "header": 75,
+    "strip": 75,
+    "stops": [
+      825,
+      1487,
+      2166,
+      2844,
+      3517,
+      4199
+    ],
+    "rawStops": [
+      825,
+      1487,
+      2844,
+      3517
+    ]
+  },
+  "omega-mobile": {
+    "url": "omegadet.vercel.app",
+    "device": "mobile",
+    "width": 390,
+    "height": 5200,
+    "header": 75,
+    "strip": 75,
+    "stops": [
+      769,
+      1387,
+      2005,
+      2789,
+      3572,
+      4356
+    ],
+    "rawStops": [
+      769,
+      2005
+    ]
+  },
+  "peribaca-desktop": {
+    "url": "peribaca.vercel.app",
+    "device": "desktop",
+    "width": 1440,
+    "height": 9000,
+    "header": 84,
+    "strip": 84,
+    "stops": [
+      816,
+      1698,
+      2580,
+      3575,
+      4199,
+      4823,
+      5450,
+      6077,
+      6704,
+      7340,
+      7975
+    ],
+    "rawStops": [
+      816,
+      2580,
+      3575,
+      4823,
+      6704,
+      7975
+    ]
+  },
+  "peribaca-mobile": {
+    "url": "peribaca.vercel.app",
+    "device": "mobile",
+    "width": 390,
+    "height": 5200,
+    "header": 74,
+    "strip": 74,
+    "stops": [
+      770,
+      1487,
+      2204,
+      2922,
+      3639,
+      4356
+    ],
+    "rawStops": [
+      770
+    ]
+  },
+  "shino-home-desktop": {
+    "url": "shinomontazh-narodnaya-55.ru",
+    "device": "desktop",
+    "width": 1440,
+    "height": 8127,
+    "header": 73,
+    "strip": 73,
+    "stops": [
+      827,
+      1893,
+      2993,
+      3915,
+      4862,
+      5706,
+      6539,
+      7117
+    ],
+    "rawStops": [
+      827,
+      1893,
+      2993,
+      3915,
+      4862,
+      5706,
+      6539,
+      7117
+    ]
+  },
+  "shino-home-mobile": {
+    "url": "shinomontazh-narodnaya-55.ru",
+    "device": "mobile",
+    "width": 390,
+    "height": 5200,
+    "header": 73,
+    "strip": 73,
+    "stops": [
+      771,
+      1332,
+      1892,
+      2456,
+      3021,
+      3585,
+      4356
+    ],
+    "rawStops": [
+      771,
+      1892,
+      3585
+    ]
+  },
+  "shino-pravka-desktop": {
+    "url": "shinomontazh-narodnaya-55.ru/pravka-diskov/",
+    "device": "desktop",
+    "width": 1440,
+    "height": 5402,
+    "header": 73,
+    "strip": 73,
+    "stops": [
+      599,
+      1264,
+      2098,
+      2772,
+      3445,
+      4049,
+      4502
+    ],
+    "rawStops": [
+      599,
+      1264,
+      2098,
+      3445,
+      4049
+    ]
+  },
+  "shino-hranenie-desktop": {
+    "url": "shinomontazh-narodnaya-55.ru/hranenie-shin/",
+    "device": "desktop",
+    "width": 1440,
+    "height": 5299,
+    "header": 73,
+    "strip": 73,
+    "stops": [
+      567,
+      1325,
+      1999,
+      2672,
+      3297,
+      3946,
+      4399
+    ],
+    "rawStops": [
+      567,
+      1325,
+      2672,
+      3297,
+      3946
+    ]
+  },
+  "moyka-desktop": {
+    "url": "moyka-vitebskiy.ru",
+    "device": "desktop",
+    "width": 1440,
+    "height": 5027,
+    "header": 65,
+    "strip": 65,
+    "stops": [
+      766,
+      1593,
+      2424,
+      3235,
+      4076
+    ],
+    "rawStops": [
+      766,
+      1593,
+      2424,
+      3235,
+      4076
+    ]
+  },
+  "moyka-mobile": {
+    "url": "moyka-vitebskiy.ru",
+    "device": "mobile",
+    "width": 390,
+    "height": 5200,
+    "header": 65,
+    "strip": 65,
+    "stops": [
+      1041,
+      1802,
+      2563,
+      3372,
+      4180
+    ],
+    "rawStops": [
+      1041,
+      2563,
+      4180
+    ]
+  },
+  "mc-home-desktop": {
+    "url": "mc-project.ru",
+    "device": "desktop",
+    "width": 1440,
+    "height": 9643,
+    "header": 115,
+    "stops": [
+      823,
+      1669,
+      2435,
+      3200,
+      4009,
+      4818,
+      5487,
+      6156,
+      7058,
+      7600,
+      8620
+    ],
+    "strip": 115,
+    "rawStops": [
+      823,
+      1669,
+      3200,
+      4818,
+      6156,
+      7058,
+      7600,
+      8620
+    ]
+  }
+}

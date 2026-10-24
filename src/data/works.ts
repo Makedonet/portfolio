@@ -8,22 +8,15 @@
 //   index.html из репозитория (24.10.2026);
 // - ТИ: README.md;
 // - OMEGA и PERIBACA: их README.md.
-// Скриншоты мойки, шиномонтажа и ТИ сняты с локальной сборки, остальные — из
-// docs/ репозиториев.
-import type { ImageMetadata } from "astro";
-
-import mcDesktop from "../assets/works/mc-desktop.webp";
-import mcMobile from "../assets/works/mc-mobile.webp";
-import shinoDesktop from "../assets/works/shino-desktop.jpg";
-import shinoMobile from "../assets/works/shino-mobile.jpg";
-import moykaDesktop from "../assets/works/moyka-desktop.jpg";
-import moykaMobile from "../assets/works/moyka-mobile.jpg";
-import tiDesktop from "../assets/works/ti-desktop.jpg";
-import tiMobile from "../assets/works/ti-mobile.jpg";
-import omegaDesktop from "../assets/works/omega-desktop.jpg";
-import omegaMobile from "../assets/works/omega-mobile.jpg";
-import peribacaDesktop from "../assets/works/peribaca-desktop.jpg";
-import peribacaMobile from "../assets/works/peribaca-mobile.jpg";
+// Кадры для окон — в data/live.ts: главная mc-project после редизайна — из
+// полноэкранного снимка заказчика (PDF, 24.10.2026), остальные сняты скриптом.
+/** Кадры «живых окон» — id из live.json (их снимает скрипт съёмки). */
+export type Screens = {
+  /** Страницы сайта в окне браузера — по очереди, как переход по ссылкам. */
+  desktop: string[];
+  /** Мобильная версия в телефоне. */
+  mobile?: string;
+};
 
 export type Metric = { value: string; label: string };
 
@@ -42,8 +35,7 @@ export type Work = {
   stack: string[];
   url: string;
   urlLabel: string;
-  desktop: ImageMetadata;
-  mobile: ImageMetadata;
+  screens: Screens;
 };
 
 export const works: Work[] = [
@@ -52,7 +44,7 @@ export const works: Work[] = [
     title: "MC-PROJECT.RU",
     kind: "Сайт геотехнической компании",
     status: { tone: "live", label: "Работает с июля 2026" },
-    now: "Сейчас делаю редизайн и многостраничную версию",
+    now: "В окне — редизайн: новая главная и многостраничная версия, пока на тестовом адресе",
     summary:
       "Продвигает технологию усиления грунтов и подъёма фундаментов. Читают его главные инженеры и проектировщики, поэтому вместо обещаний — цифры, нормативы и документы, которые можно приложить к проекту.",
     done: [
@@ -69,8 +61,7 @@ export const works: Work[] = [
     stack: ["Astro", "TypeScript", "Tailwind CSS", "PHP", "Telegram Bot API", "Яндекс Облако"],
     url: "https://mc-project.ru/",
     urlLabel: "mc-project.ru",
-    desktop: mcDesktop,
-    mobile: mcMobile,
+    screens: { desktop: ["mc-home-desktop"] },
   },
   {
     id: "shinomontazh",
@@ -93,8 +84,10 @@ export const works: Work[] = [
     stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты"],
     url: "https://shinomontazh-narodnaya-55.ru/",
     urlLabel: "shinomontazh-narodnaya-55.ru",
-    desktop: shinoDesktop,
-    mobile: shinoMobile,
+    screens: {
+      desktop: ["shino-home-desktop", "shino-pravka-desktop", "shino-hranenie-desktop"],
+      mobile: "shino-home-mobile",
+    },
   },
   {
     id: "moyka",
@@ -115,8 +108,7 @@ export const works: Work[] = [
     stack: ["Astro", "Tailwind CSS", "TypeScript"],
     url: "https://moyka-vitebskiy.ru/",
     urlLabel: "moyka-vitebskiy.ru",
-    desktop: moykaDesktop,
-    mobile: moykaMobile,
+    screens: { desktop: ["moyka-desktop"], mobile: "moyka-mobile" },
   },
   {
     id: "ti-redesign",
@@ -138,8 +130,7 @@ export const works: Work[] = [
     stack: ["HTML", "CSS", "JavaScript", "SVG", "Node.js"],
     url: "https://ti-redesign-iota.vercel.app/",
     urlLabel: "ti-redesign-iota.vercel.app",
-    desktop: tiDesktop,
-    mobile: tiMobile,
+    screens: { desktop: ["ti-desktop"], mobile: "ti-mobile" },
   },
 ];
 
@@ -151,8 +142,7 @@ export type Demo = {
   url: string;
   urlLabel: string;
   code: string;
-  desktop: ImageMetadata;
-  mobile: ImageMetadata;
+  screens: Screens;
 };
 
 export const demos: Demo[] = [
@@ -165,8 +155,7 @@ export const demos: Demo[] = [
     url: "https://omegadet.vercel.app/",
     urlLabel: "omegadet.vercel.app",
     code: "https://github.com/Makedonet/Omega",
-    desktop: omegaDesktop,
-    mobile: omegaMobile,
+    screens: { desktop: ["omega-desktop"], mobile: "omega-mobile" },
   },
   {
     id: "peribaca",
@@ -177,8 +166,7 @@ export const demos: Demo[] = [
     url: "https://peribaca.vercel.app/",
     urlLabel: "peribaca.vercel.app",
     code: "https://github.com/Makedonet/Cappadocia",
-    desktop: peribacaDesktop,
-    mobile: peribacaMobile,
+    screens: { desktop: ["peribaca-desktop"], mobile: "peribaca-mobile" },
   },
 ];
 

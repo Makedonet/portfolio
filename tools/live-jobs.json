@@ -1,0 +1,16 @@
+[
+  { "id": "mc-home-desktop", "base": "https://new.shinomontazh-narodnaya-55.ru", "path": "/", "device": "desktop", "maxHeight": 9750, "url": "mc-project.ru" },
+  { "id": "mc-home-mobile", "base": "https://new.shinomontazh-narodnaya-55.ru", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "mc-project.ru" },
+  { "id": "shino-home-desktop", "base": "https://shinomontazh-narodnaya-55.ru", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "shinomontazh-narodnaya-55.ru" },
+  { "id": "shino-home-mobile", "base": "https://shinomontazh-narodnaya-55.ru", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "shinomontazh-narodnaya-55.ru" },
+  { "id": "shino-pravka-desktop", "base": "https://shinomontazh-narodnaya-55.ru", "path": "/pravka-diskov/", "device": "desktop", "maxHeight": 6000, "url": "shinomontazh-narodnaya-55.ru/pravka-diskov/" },
+  { "id": "shino-hranenie-desktop", "base": "https://shinomontazh-narodnaya-55.ru", "path": "/hranenie-shin/", "device": "desktop", "maxHeight": 6000, "url": "shinomontazh-narodnaya-55.ru/hranenie-shin/" },
+  { "id": "moyka-desktop", "base": "https://moyka-vitebskiy.ru", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "moyka-vitebskiy.ru" },
+  { "id": "moyka-mobile", "base": "https://moyka-vitebskiy.ru", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "moyka-vitebskiy.ru" },
+  { "id": "ti-desktop", "base": "https://ti-redesign-iota.vercel.app", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "ti-redesign-iota.vercel.app" },
+  { "id": "ti-mobile", "base": "https://ti-redesign-iota.vercel.app", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "ti-redesign-iota.vercel.app" },
+  { "id": "omega-desktop", "base": "https://omegadet.vercel.app", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "omegadet.vercel.app" },
+  { "id": "omega-mobile", "base": "https://omegadet.vercel.app", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "omegadet.vercel.app" },
+  { "id": "peribaca-desktop", "base": "https://peribaca.vercel.app", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "peribaca.vercel.app" },
+  { "id": "peribaca-mobile", "base": "https://peribaca.vercel.app", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "peribaca.vercel.app" }
+]

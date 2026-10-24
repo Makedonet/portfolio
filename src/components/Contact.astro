@@ -1,7 +1,9 @@
 ---
+import { Image } from "astro:assets";
 import Icon from "./Icon.astro";
-import { contacts, phone } from "../data/site";
+import { contact, phone } from "../data/site";
 import { typo } from "../lib/typo";
+import maxIcon from "../assets/icons/max.png";
 
 const brief = [
   "чем занимается бизнес и кто ваши клиенты",
@@ -10,31 +12,31 @@ const brief = [
   "к какому сроку нужен запуск",
 ];
 
-const telegram = contacts.find((c) => c.id === "telegram")!;
-const whatsapp = contacts.find((c) => c.id === "whatsapp")!;
+const telegram = contact("telegram");
+const whatsapp = contact("whatsapp");
+const max = contact("max");
 ---
 
 <section aria-labelledby="contact-title" id="contact" class="on-dark scroll-mt-16 bg-ink text-paper">
   <div class="container-page grid gap-14 py-20 sm:py-28 lg:grid-cols-12 lg:gap-10">
-    <div class="lg:col-span-7" data-reveal>
-      <p class="eyebrow flex items-center gap-3 text-muted-dark">
-        <span class="rounded bg-accent px-1.5 py-0.5 text-ink">04</span>
-        Контакты
-      </p>
-      <h2 id="contact-title" class="mt-5 text-4xl leading-[1.05] font-bold tracking-[-0.035em] text-balance sm:text-6xl">
+    <div class="lg:col-span-7">
+      <h2 id="contact-title" class="text-4xl leading-[1.05] font-bold tracking-[-0.035em] text-balance sm:text-6xl" data-split>
         Обсудим ваш сайт
       </h2>
       <p
         class="mt-6 max-w-xl text-lg leading-relaxed text-muted-dark"
+        data-fade
         set:html={typo(
           "Позвоните или напишите в мессенджер — отвечу, задам пару вопросов и предложу, с чего начать. Чтобы разговор сразу был предметным, подумайте:",
         )}
       />
-      <ul class="mt-6 max-w-xl space-y-3">
+      <ul class="mt-6 max-w-xl space-y-3" data-stagger>
         {
           brief.map((item) => (
             <li class="flex gap-3 leading-snug">
-              <Icon name="check" class="mt-0.5 size-[1.125rem] text-accent" />
+              <span class="mt-0.5" data-draw>
+                <Icon name="check" class="size-[1.125rem] text-accent" />
+              </span>
               <span set:html={typo(item)} />
             </li>
           ))
@@ -42,19 +44,24 @@ const whatsapp = contacts.find((c) => c.id === "whatsapp")!;
       </ul>
     </div>
 
-    <div class="lg:col-span-5 lg:pt-14" data-reveal style="--reveal-delay: 80ms">
+    <div class="lg:col-span-5 lg:pt-14" data-fade>
       <div class="rounded-2xl border border-line-dark bg-ink-2 p-6 sm:p-8">
-        <p class="text-sm text-muted-dark">Телефон, Telegram и WhatsApp — один номер</p>
+        <p class="text-sm text-muted-dark">Телефон и WhatsApp</p>
         <a
           href={phone.href}
-          class="mt-3 block font-mono text-[1.75rem] leading-tight font-semibold tracking-tight whitespace-nowrap text-paper underline decoration-paper/25 decoration-2 underline-offset-8 hover:decoration-accent sm:text-4xl lg:text-[2rem] xl:text-4xl"
+          class="group mt-2 inline-block font-mono text-[1.75rem] leading-tight font-semibold tracking-tight whitespace-nowrap text-paper sm:text-4xl lg:text-[2rem] xl:text-4xl"
         >
-          {phone.display}
+          <span class="link-line link-line-dark">{phone.display}</span>
         </a>
         <div class="mt-8 grid gap-3 sm:grid-cols-2">
           <a href={telegram.href} target="_blank" rel="noopener noreferrer" class="btn btn-accent w-full" title={telegram.title}>
             <Icon name="telegram" class="size-5" />
-            Telegram
+            {telegram.handle}
+            <span class="sr-only">— Telegram (откроется в новой вкладке)</span>
+          </a>
+          <a href={max.href} target="_blank" rel="noopener noreferrer" class="btn btn-ghost-dark w-full" title={max.title}>
+            <Image src={maxIcon} alt="" width={20} height={20} class="size-5 rounded-[5px]" />
+            MAX
             <span class="sr-only">(откроется в новой вкладке)</span>
           </a>
           <a href={whatsapp.href} target="_blank" rel="noopener noreferrer" class="btn btn-ghost-dark w-full" title={whatsapp.title}>
@@ -62,7 +69,7 @@ const whatsapp = contacts.find((c) => c.id === "whatsapp")!;
             WhatsApp
             <span class="sr-only">(откроется в новой вкладке)</span>
           </a>
-          <a href={phone.href} class="btn btn-ghost-dark w-full sm:col-span-2">
+          <a href={phone.href} class="btn btn-ghost-dark w-full">
             <Icon name="phone" class="size-4" />
             Позвонить
           </a>
