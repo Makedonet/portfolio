@@ -38,6 +38,14 @@ const first = scenes[0]!;
 const screenHeight = viewportHeight(device);
 
 const widthsFor = (image: ImageMetadata, list: number[]) => list.filter((w) => w <= image.width);
+
+/** Если страниц в окне несколько, на каждой не больше пяти остановок — иначе
+ *  до второй страницы «видео» добиралось бы полминуты. Берутся равномерно. */
+const thin = (stops: number[]) => {
+  const limit = ids.length > 1 ? 5 : Infinity;
+  if (stops.length <= limit) return stops;
+  return Array.from({ length: limit }, (_, i) => stops[Math.round(((i + 1) * stops.length) / limit) - 1]!);
+};
 const pageWidths = desktop ? [640, 960, 1280] : [270, 360, 540, 780];
 
 const prepared = await Promise.all(
@@ -55,7 +63,7 @@ const prepared = await Promise.all(
       webpSrc: webp.src,
       header,
       // Остановки — в процентах высоты кадра: так они не зависят от ширины окна.
-      stops: scene.stops.map((px) => Number(((px / scene.height) * 100).toFixed(3))),
+      stops: thin(scene.stops).map((px) => Number(((px / scene.height) * 100).toFixed(3))),
       // Дальше этого кадр не уезжает: низ кадра совпадает с низом экрана.
       max: Number((((scene.height - screenHeight) / scene.height) * 100).toFixed(3)),
       screens: Number((scene.height / screenHeight).toFixed(3)),

@@ -100,8 +100,10 @@ const subtitle = ["от идеи", "до первых", "заявок"];
         </div>
         <div class="relative lg:w-[86%]" data-depth="24" data-parallax="-3">
           <div class="hero-pop" style="--d: 0.3s">
+            {/* Здесь только главная: прогулка по страницам — в кейсе ниже, а
+                первому экрану незачем сразу качать четыре длинных кадра. */}
             <LiveWindow
-              scenes={mc.screens.desktop}
+              scenes={mc.screens.desktop.slice(0, 1)}
               device="desktop"
               sizes="(min-width: 1280px) 34rem, (min-width: 1024px) 44vw, (min-width: 640px) 36rem, 92vw"
               label={`Сайт ${mc.urlLabel} листается сам`}

@@ -6,7 +6,9 @@
 //   node tools/live-post.mjs                    # постеры, полосы шапок, остановки
 //
 // Задание в live-jobs.json: { id, base (https://…) | root (папка со статикой),
-// path, device: "desktop" | "mobile", maxHeight, url }. Компьютер снимается на
+// path, device: "desktop" | "mobile", maxHeight, url, settle?, mode? }; settle —
+// пауза на шаге прокрутки, мс, для страниц с картами и виджетами; mode: "stitch"
+// — склейка из снимков экрана (см. stitch ниже). Компьютер снимается на
 // 1440×900, телефон — на 390×844 с DPR 2. Для каждого кадра записываются в
 // src/data/live.json высота липкой шапки и остановки «видео» — верхние края
 // секций за вычетом шапки. Плавающие кнопки и нижние панели прячутся, счётчики
@@ -60,10 +62,84 @@ async function serve(root) {
   return base;
 }
 
-// Счётчики и трекеры не грузим: снимок не должен портить статистику заказчика.
-const BLOCK = /mc\.yandex|metrika|callibri|google-analytics|googletagmanager|top-fwz1\.mail\.ru|vk\.com\/rtrg/i;
+/**
+ * Кадр склейкой из снимков экрана — для страниц с картами и чужими iframe
+ * (виджеты отзывов): в полностраничном снимке Chromium оставляет их чёрными
+ * за пределами экрана. Шапку со второго экрана прячем: её полоса и так лежит
+ * поверх кадра в окне. Липкие сцены (закреплённые при прокрутке блоки) так
+ * снимать нельзя — они попадут в кадр несколько раз; для них режим по умолчанию.
+ */
+async function stitch(page, file, { width, height, vh, dpr, settle }) {
+  const { default: sharp } = await import("sharp");
+  const parts = [];
+  for (let y = 0; y < height; y += vh) {
+    const actual = await page.evaluate((top) => {
+      window.scrollTo({ top, behavior: "instant" });
+      return Math.round(window.scrollY);
+    }, y);
+    if (y > 0 && parts.length === 1) {
+      await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        for (const el of document.querySelectorAll("body *")) {
+          const cs = getComputedStyle(el);
+          if (cs.position !== "fixed" && cs.position !== "sticky") continue;
+          const r = el.getBoundingClientRect();
+          if (r.top <= 1 && r.width >= vw * 0.8 && r.height >= 30 && r.height <= 240) {
+            el.dataset.captureHidden = "";
+            el.style.setProperty("visibility", "hidden", "important");
+          } else if (cs.position === "sticky") {
+            // Липкий блок внутри секции (заголовок у списка вопросов) попал бы
+            // в склейку несколько раз — ставим его на место.
+            el.dataset.captureUnstuck = "";
+            el.style.setProperty("position", "relative", "important");
+          }
+        }
+      });
+    }
+    await page.waitForTimeout(settle);
+    // Плавающие кнопки и нижние панели часто появляются только после прокрутки —
+    // прячем их на каждом экране, иначе они повторятся в склейке.
+    await page.evaluate(() => {
+      for (const el of document.querySelectorAll("body *")) {
+        const cs = getComputedStyle(el);
+        if (cs.position !== "fixed") continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.top > innerHeight * 0.45 || r.height > innerHeight * 0.6) el.style.setProperty("visibility", "hidden", "important");
+      }
+    });
+    const shot = await page.screenshot({ type: "png" });
+    const top = (y - actual) * dpr; // у низа страницы прокрутка упирается в конец
+    const h = Math.min(vh, height - y) * dpr;
+    parts.push({ input: await sharp(shot).extract({ left: 0, top, width: width * dpr, height: h }).toBuffer(), top: y * dpr, left: 0 });
+  }
+  await sharp({ create: { width: width * dpr, height: height * dpr, channels: 3, background: "#ffffff" } })
+    .composite(parts)
+    .jpeg({ quality: 88, mozjpeg: true })
+    .toFile(file);
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll("[data-capture-hidden]")) {
+      el.style.removeProperty("visibility");
+      delete el.dataset.captureHidden;
+    }
+    for (const el of document.querySelectorAll("[data-capture-unstuck]")) {
+      el.style.removeProperty("position");
+      delete el.dataset.captureUnstuck;
+    }
+  });
+}
 
-const browser = await playwright.chromium.launch();
+// Счётчики и трекеры не грузим: снимок не должен портить статистику заказчика.
+// Только по домену счётчика: слово «metrika» в адресе есть и у собственных
+// модулей сайтов (_astro/metrika.*.js) — без них не грузился весь скрипт
+// страницы, а с ним и карта.
+const BLOCK = /^https?:\/\/([^/]*\.)?(mc\.yandex\.(ru|com)|callibri\.ru|google-analytics\.com|googletagmanager\.com|top-fwz1\.mail\.ru)\//i;
+
+// В облачном окружении выход в сеть — через прокси из HTTPS_PROXY; локально
+// переменной нет, и браузер ходит напрямую.
+const browser = await playwright.chromium.launch(
+  process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {},
+);
 for (const job of jobs) {
   const base = job.root ? await serve(job.root) : job.base;
   const mobile = job.device === "mobile";
@@ -87,14 +163,19 @@ for (const job of jobs) {
   await page.evaluate(() => document.fonts.ready);
 
   // Прокрутка вниз и обратно: догружаются ленивые картинки и блоки.
-  await page.evaluate(async (max) => {
-    const step = Math.round(innerHeight * 0.7);
-    for (let y = 0; y < Math.min(document.documentElement.scrollHeight, max + innerHeight); y += step) {
-      window.scrollTo({ top: y, behavior: "instant" });
-      await new Promise((r) => setTimeout(r, 120));
-    }
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, job.maxHeight);
+  // settle — пауза на каждом шаге: карты и виджеты отзывов часто грузятся,
+  // только когда прокрутка остановилась.
+  await page.evaluate(
+    async ({ max, settle }) => {
+      const step = Math.round(innerHeight * 0.7);
+      for (let y = 0; y < Math.min(document.documentElement.scrollHeight, max + innerHeight); y += step) {
+        window.scrollTo({ top: y, behavior: "instant" });
+        await new Promise((r) => setTimeout(r, settle));
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    { max: job.maxHeight, settle: job.settle ?? 250 },
+  );
   await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
 
@@ -135,13 +216,17 @@ for (const job of jobs) {
   }
 
   const file = join(outDir, `${job.id}.jpg`);
-  await page.screenshot({
-    path: file,
-    type: "jpeg",
-    quality: 88,
-    fullPage: true,
-    clip: { x: 0, y: 0, width: mobile ? 390 : 1440, height },
-  });
+  if (job.mode === "stitch") {
+    await stitch(page, file, { width: mobile ? 390 : 1440, height, vh, dpr: mobile ? 2 : 1, settle: job.settle ?? 600 });
+  } else {
+    await page.screenshot({
+      path: file,
+      type: "jpeg",
+      quality: 88,
+      fullPage: true,
+      clip: { x: 0, y: 0, width: mobile ? 390 : 1440, height },
+    });
+  }
   // Шапка в прокрученном состоянии: на многих сайтах она при прокрутке меняет
   // фон или ужимается. Её полоса лежит поверх листающегося кадра в окне.
   await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), Math.round(vh * 1.5));
