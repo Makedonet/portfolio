@@ -2,12 +2,16 @@
 // GSAP-таймлайном с паузами на секциях, как запись экрана.
 // - Кадры грузятся, когда окно подходит к экрану; до того виден постер.
 // - Таймлайн идёт, только пока окно на экране.
-// - Наведение мышью — перемотка: высота указателя в окне = позиция «видео».
+// - Под курсором автопрокрутка встаёт, и сайт в окне листается колёсиком,
+//   как настоящий. Дойдя до края, колёсико снова листает страницу — но не в
+//   том же жесте, иначе инерция тачпада проскакивала бы окно насквозь.
+//   Курсор ушёл — «видео» едет дальше с ближайшей остановки.
 // - Кнопка паузы в строке адреса останавливает все окна своей группы
 //   ([data-live-group]): автодвижение дольше пяти секунд должно
 //   останавливаться (WCAG 2.2.2).
 // Вызывается только без «уменьшить движение»: иначе окна остаются постерами.
 import { gsap } from "gsap";
+import { load } from "./deferred";
 
 type Scene = {
   el: HTMLElement;
@@ -21,26 +25,8 @@ type Scene = {
 
 type Group = { paused: boolean; buttons: HTMLButtonElement[]; syncs: Array<() => void> };
 
-/** Подставляет srcset из data-атрибутов и ждёт, пока картинка декодируется. */
-function load(img: HTMLImageElement): Promise<void> {
-  const picture = img.parentElement instanceof HTMLPictureElement ? img.parentElement : null;
-  picture?.querySelectorAll<HTMLSourceElement>("source[data-srcset]").forEach((source) => {
-    source.srcset = source.dataset.srcset!;
-    source.removeAttribute("data-srcset");
-  });
-  if (img.dataset.srcset) img.srcset = img.dataset.srcset;
-  if (img.dataset.src) img.src = img.dataset.src;
-  img.removeAttribute("data-srcset");
-  img.removeAttribute("data-src");
-  return new Promise((resolve) => {
-    const done = () => img.decode().then(resolve, resolve);
-    if (img.complete && img.naturalWidth) done();
-    else {
-      img.addEventListener("load", done, { once: true });
-      img.addEventListener("error", () => resolve(), { once: true });
-    }
-  });
-}
+/** Остановка «видео»: страница, положение кадра и время начала паузы. */
+type Hold = { scene: number; y: number; time: number };
 
 function readScenes(win: HTMLElement): Scene[] {
   return [...win.querySelectorAll<HTMLElement>("[data-live-scene]")].map((el) => ({
@@ -55,9 +41,10 @@ function readScenes(win: HTMLElement): Scene[] {
 }
 
 /** Таймлайн одного окна: страницы друг за другом, в конце — снова первая. */
-function buildTimeline(scenes: Scene[], onUpdate: (scene: number, progress: number) => void): gsap.core.Timeline {
+function buildTimeline(scenes: Scene[], onUpdate: (scene: number, progress: number) => void): { tl: gsap.core.Timeline; holds: Hold[] } {
   const tl = gsap.timeline({ repeat: -1, paused: true });
   const starts: number[] = [];
+  const holds: Hold[] = [];
 
   scenes.forEach((scene, i) => {
     if (i > 0) {
@@ -69,6 +56,7 @@ function buildTimeline(scenes: Scene[], onUpdate: (scene: number, progress: numb
       if (prev.header) tl.set(prev.header, { autoAlpha: 0 });
     }
     starts.push(tl.duration());
+    holds.push({ scene: i, y: 0, time: tl.duration() });
     tl.to({}, { duration: i === 0 ? 1.4 : 1 });
 
     let at = 0;
@@ -83,6 +71,7 @@ function buildTimeline(scenes: Scene[], onUpdate: (scene: number, progress: numb
       });
       // Шапка в прокрученном виде появляется с первым движением.
       if (k === 0 && scene.header) tl.to(scene.header, { autoAlpha: 1, duration: 0.2 }, "<0.15");
+      holds.push({ scene: i, y: -target, time: tl.duration() });
       tl.to({}, { duration: 1.15 });
       at = target;
     });
@@ -115,7 +104,7 @@ function buildTimeline(scenes: Scene[], onUpdate: (scene: number, progress: numb
     });
     onUpdate(index, tl.progress());
   });
-  return tl;
+  return { tl, holds };
 }
 
 export function initLiveWindows(fine: boolean): () => void {
@@ -141,19 +130,23 @@ export function initLiveWindows(fine: boolean): () => void {
     const delay = Number(win.dataset.delay ?? 0);
 
     let tl: gsap.core.Timeline | null = null;
+    let holds: Hold[] = [];
     let visible = false;
     let hovering = false;
     let started = false;
     let shownScene = 0;
+    // Ручная прокрутка колёсиком и возврат к остановке после неё.
+    let manual = false;
+    let settle: gsap.core.Tween | null = null;
 
     const sync = () => {
       if (!tl) return;
-      const play = visible && !hovering && !group.paused;
+      const play = visible && !hovering && !group.paused && !manual && !settle;
       if (play && !started) {
         // Первый запуск — со сдвигом, чтобы соседние окна не шли в ногу.
         started = true;
         gsap.delayedCall(delay, () => {
-          if (visible && !hovering && !group.paused) tl?.play();
+          if (visible && !hovering && !group.paused && !manual && !settle) tl?.play();
         });
       } else if (play) tl.play();
       else tl.pause();
@@ -169,13 +162,13 @@ export function initLiveWindows(fine: boolean): () => void {
         ...scenes.map((s) => (s.header ? load(s.header) : Promise.resolve())),
       ]);
       scenes.forEach((s) => s.header && gsap.set(s.header, { autoAlpha: 0 }));
-      tl = buildTimeline(scenes, (index, progress) => {
+      ({ tl, holds } = buildTimeline(scenes, (index, progress) => {
         if (index !== shownScene) {
           shownScene = index;
           if (urlEl) urlEl.textContent = scenes[index]!.url;
         }
         if (progressEl) progressEl.style.transform = `scaleX(${progress.toFixed(4)})`;
-      });
+      }));
       sync();
     };
 
@@ -199,29 +192,88 @@ export function initLiveWindows(fine: boolean): () => void {
     seen.observe(win);
 
     if (fine) {
-      // Перемотка указателем: пауза, позиция «видео» — по высоте курсора.
-      const scrub = (event: PointerEvent) => {
-        if (!tl) return;
-        const rect = screen.getBoundingClientRect();
-        const p = gsap.utils.clamp(0, 1, (event.clientY - rect.top) / rect.height);
-        gsap.to(tl, { progress: p, duration: 0.6, ease: "power3.out", overwrite: true });
+      // Колёсико листает кадр показанной страницы. Цель — в процентах высоты
+      // кадра, как и у таймлайна; плавность — от quickTo.
+      let goal = 0;
+      let lastWheel = -Infinity;
+      const movers = new Map<Scene, ReturnType<typeof gsap.quickTo>>();
+      const mover = (scene: Scene) => {
+        let fn = movers.get(scene);
+        if (!fn) {
+          fn = gsap.quickTo(scene.page, "yPercent", { duration: 0.45, ease: "power3.out" });
+          movers.set(scene, fn);
+        }
+        return fn;
       };
+
+      const wheel = (event: WheelEvent) => {
+        if (!tl || event.ctrlKey) return;
+        let scene = scenes[shownScene]!;
+        if (!manual) {
+          manual = true;
+          settle?.kill();
+          settle = null;
+          tl.pause();
+          // Попали на смену страниц — сначала довести её до конца.
+          if (Number(gsap.getProperty(scene.el, "opacity")) < 0.99) {
+            const start = holds.find((h) => h.scene === shownScene);
+            if (start) tl.time(start.time);
+            scene = scenes[shownScene]!;
+          }
+          goal = Number(gsap.getProperty(scene.page, "yPercent"));
+          mover(scene)(goal, goal);
+        }
+        const height = scene.page.offsetHeight || 1;
+        const delta = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaMode === 2 ? event.deltaY * screen.clientHeight : event.deltaY;
+        const next = gsap.utils.clamp(-scene.max, 0, goal - (delta / height) * 100);
+        // Край кадра: новый жест уходит странице, тот же — держим.
+        if (next === goal && event.timeStamp - lastWheel > 250) return;
+        event.preventDefault();
+        lastWheel = event.timeStamp;
+        goal = next;
+        mover(scene)(goal);
+        if (scene.header) gsap.to(scene.header, { autoAlpha: goal < -0.3 ? 1 : 0, duration: 0.2 });
+      };
+
+      // Курсор ушёл: доехать до ближайшей остановки и продолжить с неё.
+      const resume = () => {
+        manual = false;
+        if (!tl) return sync();
+        const scene = scenes[shownScene]!;
+        const at = Number(gsap.getProperty(scene.page, "yPercent"));
+        const options = holds.filter((h) => h.scene === shownScene);
+        const nearest = options.reduce((a, b) => (Math.abs(b.y - at) < Math.abs(a.y - at) ? b : a), options[0]!);
+        movers.get(scene)?.tween.kill();
+        if (scene.header) gsap.to(scene.header, { autoAlpha: nearest.y < 0 ? 1 : 0, duration: 0.2 });
+        settle = gsap.to(scene.page, {
+          yPercent: nearest.y,
+          duration: gsap.utils.clamp(0.25, 0.8, Math.abs(nearest.y - at) / 25),
+          ease: "power2.inOut",
+          onComplete: () => {
+            settle = null;
+            tl?.time(nearest.time);
+            sync();
+          },
+        });
+      };
+
       const enter = () => {
         hovering = true;
         sync();
       };
       const leave = () => {
         hovering = false;
-        if (tl) gsap.killTweensOf(tl);
-        sync();
+        if (manual) resume();
+        else sync();
       };
       screen.addEventListener("pointerenter", enter);
-      screen.addEventListener("pointermove", scrub);
       screen.addEventListener("pointerleave", leave);
+      screen.addEventListener("wheel", wheel, { passive: false });
       cleanups.push(() => {
         screen.removeEventListener("pointerenter", enter);
-        screen.removeEventListener("pointermove", scrub);
         screen.removeEventListener("pointerleave", leave);
+        screen.removeEventListener("wheel", wheel);
+        settle?.kill();
       });
     }
 

@@ -98,6 +98,34 @@
     box-shadow: 0 6px 24px -18px rgb(17 17 16 / 0.35);
   }
 
+  /* Знак-ключ «поворачивается в замке» при наведении на ссылку с ним. */
+  @media (prefers-reduced-motion: no-preference) {
+    .logo-key {
+      transition: rotate 0.8s var(--ease-out-expo);
+    }
+    .group:hover .logo-key {
+      rotate: x 360deg;
+    }
+  }
+
+  /* Кнопка звука: волны — включён, крестик — выключен. Без скрипта звука нет,
+     и кнопки тоже. На узком экране места в шапке нет — кнопка в подвале. */
+  .sound-toggle {
+    display: none;
+  }
+  .js .sound-toggle {
+    display: grid;
+  }
+  @media (max-width: 639px) {
+    .js header .sound-toggle {
+      display: none;
+    }
+  }
+  .sound-toggle[aria-pressed="true"] .sound-off,
+  .sound-toggle[aria-pressed="false"] .sound-on {
+    display: none;
+  }
+
   /* Ссылки меню: подчёркивание вырастает от центра. */
   .nav-link {
     position: relative;
@@ -261,6 +289,60 @@
     translate: 0.35rem 0;
   }
 
+  /* Услуги: сетка карточек, на широком экране при движении — лента вбок
+     (motion.ts закрепляет секцию и двигает ленту). Отступ слева у ленты —
+     как у контейнера страницы, чтобы первая карточка стояла по сетке. */
+  .services-track {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .services-track {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 768px) {
+    .services-track {
+      padding-inline: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .services-track {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .motion-on .services-pin {
+      display: flex;
+      min-height: 100vh;
+      flex-direction: column;
+      justify-content: center;
+      padding-block: 4.5rem;
+    }
+    .motion-on .services-track {
+      display: flex;
+      width: max-content;
+      max-width: none;
+      margin-inline: 0;
+      padding-inline: max(2rem, calc((100% - 78rem) / 2 + 2rem));
+    }
+    .motion-on .services-track > li {
+      flex: none;
+      width: 23rem;
+      min-height: 20rem;
+    }
+  }
+  .services-progress {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .motion-on .services-progress {
+      display: block;
+    }
+  }
+
   /* Услуги: жёлтая заливка поднимается снизу, заголовок сдвигается. */
   .service {
     position: relative;
@@ -279,6 +361,9 @@
   }
   .service:hover::before {
     transform: scaleY(1);
+  }
+  .service:hover {
+    border-color: var(--color-accent);
   }
   .service h3 {
     transition: translate 0.45s var(--ease-out-expo);
@@ -315,6 +400,74 @@
     scale: 1.15;
   }
 
+  /* Абзац подхода: пока слово не «прочитано», видна только его обводка
+     (заливку ведёт motion.ts). */
+  .manifesto-word {
+    -webkit-text-stroke: 1.25px var(--color-ink);
+  }
+
+  /* Имя в подвале: во всю ширину, насыщенность каждой буквы — --w
+     (motion.ts меняет её у курсора). */
+  .footer-name {
+    display: flex;
+    justify-content: space-between;
+    overflow: hidden;
+    padding-top: clamp(3.5rem, 9vw, 7rem);
+    padding-bottom: 0.04em;
+    font-size: min(17vw, 15.5rem);
+    font-weight: 300;
+    line-height: 0.82;
+    letter-spacing: -0.03em;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .footer-letter {
+    display: inline-block;
+    text-align: center;
+    font-weight: var(--w, 300);
+  }
+
+  /* Подсказка у курсора (scripts/cursor.ts): едет рядом с системным курсором. */
+  .cursor-label {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    margin: 20px 0 0 18px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font: 500 0.75rem/1.25 var(--font-mono);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.6;
+    transform-origin: 0 0;
+    transition:
+      opacity 0.2s var(--ease-out),
+      scale 0.35s var(--ease-out-expo);
+  }
+  .cursor-label.is-shown {
+    opacity: 1;
+    scale: 1;
+  }
+
+  /* Копирование номера: без скрипта копировать нечем. */
+  .copy-btn {
+    display: none;
+  }
+  .js .copy-btn {
+    display: grid;
+  }
+  .copy-btn .copy-done,
+  .copy-btn.is-copied .copy-idle {
+    display: none;
+  }
+  .copy-btn.is-copied .copy-done {
+    display: block;
+  }
+
   /* Кнопка паузы «живых окон» нужна, только когда окна движутся. */
   [data-live-toggle] {
     display: none;
@@ -325,7 +478,8 @@
 
   /* Маркер под словом: заливка проводится слева направо после появления
      заголовка. Без скрипта и при «уменьшить движение» — сразу закрашено. */
-  .marker {
+  .marker,
+  .marker-scroll {
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
     background-position: 0 88%;
@@ -337,9 +491,9 @@
   }
 
   /* Первый экран оживает на CSS — сразу при первой отрисовке, не дожидаясь
-     скрипта: слова поднимаются из-под маски, абзацы всплывают, окна
-     въезжают. Только при .js (его ставит скрипт в <head>) и без «уменьшить
-     движение»; иначе всё стоит на месте. */
+     скрипта: слова поднимаются из-под маски, абзацы всплывают, визитка
+     влетает на ленте (Badge.astro). Только при .js (его ставит скрипт в
+     <head>) и без «уменьшить движение»; иначе всё стоит на месте. */
   .hero-mask {
     display: inline-block;
     overflow: clip;
@@ -357,20 +511,12 @@
       animation-delay: calc(0.05s + var(--i, 0) * 0.07s);
     }
     /* Абзац и кнопки въезжают только движением, без прозрачности: так текст
-       первого экрана виден с первой отрисовки, и именно он, а не кадр в окне,
-       дорисованный позже, засчитывается браузером как главный контент (LCP). */
+       первого экрана виден с первой отрисовки, и именно он, а не портрет на
+       визитке, засчитывается браузером как главный контент (LCP). */
     .js .hero-fade {
       transform: translateY(18px);
       animation: hero-fade 0.9s var(--ease-out-expo) forwards;
       animation-delay: var(--d, 0.4s);
-    }
-    /* Окна въезжают только движением, без прозрачности: постер главного окна —
-       самая крупная картинка экрана (LCP), он должен быть виден с первой
-       отрисовки. */
-    .js .hero-pop {
-      transform: translateY(32px) rotate(var(--r, 0deg)) scale(0.97);
-      animation: hero-pop 1.2s var(--ease-out-expo) forwards;
-      animation-delay: var(--d, 0.3s);
     }
     .js .marker {
       background-size: 0% 0.42em;
@@ -383,11 +529,6 @@
     }
   }
   @keyframes hero-fade {
-    to {
-      transform: none;
-    }
-  }
-  @keyframes hero-pop {
     to {
       transform: none;
     }

@@ -7,9 +7,11 @@ const telegram = contact("telegram");
 ---
 
 <header class="sticky top-0 z-30 border-b border-transparent bg-paper/90 backdrop-blur-md" data-header>
+  {/* Сколько страницы прочитано — жёлтая полоса по нижнему краю (motion.ts). */}
+  <span class="pointer-events-none absolute inset-x-0 -bottom-px h-[3px] origin-left scale-x-0 bg-accent" aria-hidden="true" data-progress></span>
   <div class="container-page flex h-16 items-center gap-4 lg:h-[4.5rem]">
     <a href="#top" class="group -m-1 flex items-center gap-3 rounded-lg p-1">
-      <Logo class="size-9 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:-rotate-6 lg:size-10" />
+      <Logo class="h-7 w-auto lg:h-8" />
       <span class="leading-tight">
         <span class="block text-[1.0625rem] font-semibold tracking-tight">{site.name}</span>
         <span class="block text-xs text-muted">сайты под ключ</span>
@@ -32,6 +34,20 @@ const telegram = contact("telegram");
     </nav>
 
     <div class="ml-auto flex items-center gap-2 lg:ml-4">
+      <button
+        type="button"
+        class="sound-toggle size-11 place-items-center rounded-full border border-line bg-surface text-ink transition-[border-color,background-color,color] duration-300 hover:border-ink hover:bg-ink hover:text-paper"
+        aria-pressed="true"
+        aria-label="Звук при нажатиях"
+        title="Звук при нажатиях"
+        data-sound-toggle
+      >
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"></path>
+          <path class="sound-on" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>
+          <path class="sound-off" d="m16 9.5 5 5m0-5-5 5"></path>
+        </svg>
+      </button>
       <a
         href={telegram.href}
         target="_blank"

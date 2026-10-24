@@ -1,7 +1,8 @@
 ---
 import "../styles/global.css";
-import { Font } from "astro:assets";
+import { Font, getImage } from "astro:assets";
 import { phone, site } from "../data/site";
+import head from "../assets/avatar/head.png";
 
 interface Props {
   title?: string;
@@ -15,6 +16,8 @@ const { title = site.title, description = site.description, noindex = false } = 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = new URL("/og.jpg", Astro.site).href;
 const home = new URL("/", Astro.site).href;
+// Фото для микроразметки: поисковику — лицо, а не картинку для соцсетей.
+const photo = await getImage({ src: head, width: 320, format: "webp" });
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -27,7 +30,7 @@ const structuredData = {
       description: site.role,
       telephone: phone.e164,
       url: home,
-      image: ogImage,
+      image: new URL(photo.src, Astro.site).href,
       sameAs: [site.github],
       knowsAbout: ["Разработка сайтов", "Astro", "TypeScript", "Tailwind CSS", "SEO", "Веб-доступность"],
     },
@@ -94,7 +97,7 @@ const structuredData = {
     >
     <slot />
     <script>
-      import "../scripts/motion";
+      import "../scripts/boot";
     </script>
   </body>
 </html>

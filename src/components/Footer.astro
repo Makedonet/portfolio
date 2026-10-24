@@ -8,12 +8,17 @@ const year = new Date().getFullYear();
 
 <footer class="on-dark bg-ink text-paper">
   <div class="container-page">
+    {/* Имя во всю ширину: буквы поднимаются при появлении и «набирают вес»
+        рядом с курсором — у Onest вариативная насыщенность (motion.ts). */}
+    <p class="footer-name" aria-hidden="true" data-footer-name>
+      {[...site.name.toUpperCase()].map((letter) => <span class="footer-letter">{letter}</span>)}
+    </p>
     <div class="flex flex-col gap-6 border-t border-line-dark py-8 sm:flex-row sm:items-center">
       <div class="flex items-center gap-3">
-        <Logo class="size-8 [&_rect:first-child]:fill-[#262624]" />
+        <Logo class="h-6 w-auto" />
         <p class="text-sm text-muted-dark">© {year} {site.name} · {site.role}</p>
       </div>
-      <div class="flex items-center gap-6 text-sm sm:ml-auto">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm sm:ml-auto">
         <a
           href={site.github}
           target="_blank"
@@ -23,6 +28,19 @@ const year = new Date().getFullYear();
           GitHub
           <span class="sr-only">(откроется в новой вкладке)</span>
         </a>
+        <button
+          type="button"
+          class="sound-toggle min-h-11 grid-flow-col items-center gap-1.5 text-muted-dark hover:text-paper"
+          aria-pressed="true"
+          data-sound-toggle
+        >
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"></path>
+            <path class="sound-on" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>
+            <path class="sound-off" d="m16 9.5 5 5m0-5-5 5"></path>
+          </svg>
+          Звук при нажатиях
+        </button>
         <a href="#top" class="inline-flex min-h-11 items-center gap-1.5 text-muted-dark hover:text-paper">
           Наверх
           <Icon name="arrow-up" class="size-4" />

@@ -1,5 +1,5 @@
 // Движение страницы на GSAP: появление при прокрутке, счётчики, линия этапов,
-// параллакс, наклон и «магнит» при наведении, «живые окна».
+// наклон и «магнит» при наведении, «живые окна».
 // Первый экран анимирован на CSS (global.css): он должен ожить сразу при
 // первой отрисовке, не дожидаясь скрипта. Всё остальное — здесь.
 // Разметка размечает, что анимировать, data-атрибутами:
@@ -7,15 +7,24 @@
 //   data-fade — блок всплывает; data-stagger — дети всплывают по очереди;
 //   data-count — число досчитывает до своего значения (data-count-from — откуда);
 //   data-draw — линия галочки прорисовывается;
-//   data-parallax — сдвиг при прокрутке, % своей высоты;
 //   data-tilt + data-depth — наклон и глубина слоёв под курсором;
 //   .btn и data-magnetic — кнопка тянется за курсором;
-//   data-process — линия этапов и шаги.
+//   data-process — линия этапов и шаги;
+//   data-progress — полоса прочитанного в шапке;
+//   data-marquee — ленты крест-накрест, разгоняются от прокрутки;
+//   data-manifesto — абзац проявляется по словам вслед за прокруткой;
+//   data-services — лента услуг едет вбок, пока секция закреплена;
+//   data-footer-name — имя в подвале, буквы набирают вес у курсора.
+// Визитка первого экрана, наклейки и подсказка у курсора — в своих модулях
+// (badge, stickers, cursor). Запускает всё boot.ts — после загрузки страницы.
 // «Уменьшить движение» — ничего из этого: страница видна как есть.
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { initLiveWindows } from "./live";
+import { initBadge } from "./badge";
+import { initStickers } from "./stickers";
+import { initCursor } from "./cursor";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -42,10 +51,12 @@ function measureOnScreen(): Set<Element> {
   return seen;
 }
 
-function headings(onScreen: Set<Element>) {
-  all("[data-split]")
+/** Заголовки — каждый своей задачей: разбивка на строки и слова требует
+ *  раскладки, а все разом на телефоне заняли бы поток на десятую секунды. */
+function headings(onScreen: Set<Element>): Array<() => void> {
+  return all("[data-split]")
     .filter((el) => !onScreen.has(el))
-    .forEach((el) => {
+    .map((el) => () => {
       SplitText.create(el, {
         type: "lines,words",
         mask: "lines",
@@ -132,22 +143,23 @@ function checkmarks(onScreen: Set<Element>) {
   });
 }
 
-function cases(onScreen: Set<Element>) {
-  all("[data-case]").forEach((card) => {
+/** Кейсы — тоже по одному на задачу. */
+function cases(onScreen: Set<Element>): Array<() => void> {
+  return all("[data-case]").map((card) => () => {
     const visual = card.querySelector<HTMLElement>("[data-case-visual]");
     const phone = card.querySelector<HTMLElement>("[data-case-phone]");
     if (visual && !onScreen.has(visual)) {
-      // Окно раскрывается из рамки поменьше, телефон въезжает снизу.
+      // Окно «встаёт» из наклона назад вслед за прокруткой: сначала лежит,
+      // как экран ноутбука, который открывают, к середине экрана — прямо.
       gsap.fromTo(
         visual,
-        { clipPath: "inset(10% 8% 14% 8% round 18px)", scale: 0.94 },
+        { rotationX: 32, yPercent: 10, scale: 0.9, transformPerspective: 1600, transformOrigin: "50% 100%" },
         {
-          clipPath: "inset(0% 0% 0% 0% round 12px)",
+          rotationX: 0,
+          yPercent: 0,
           scale: 1,
-          duration: 1.2,
-          ease: "expo.out",
-          clearProps: "clipPath",
-          scrollTrigger: { trigger: card, start: "top 78%", once: true },
+          ease: "power2.out",
+          scrollTrigger: { trigger: card, start: "top bottom", end: "top 30%", scrub: 0.8 },
         },
       );
     }
@@ -160,7 +172,7 @@ function cases(onScreen: Set<Element>) {
         duration: 1.2,
         ease: "expo.out",
         delay: 0.2,
-        scrollTrigger: { trigger: card, start: "top 78%", once: true },
+        scrollTrigger: { trigger: card, start: "top 70%", once: true },
       });
     }
     // Телефон чуть обгоняет окно при прокрутке — глубина. yPercent, а не y:
@@ -169,16 +181,6 @@ function cases(onScreen: Set<Element>) {
       yPercent: -14,
       ease: "none",
       scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
-    });
-  });
-}
-
-function parallax() {
-  all("[data-parallax]").forEach((el) => {
-    gsap.to(el, {
-      yPercent: Number(el.dataset.parallax),
-      ease: "none",
-      scrollTrigger: { trigger: el.closest("section") ?? el, start: "top top", end: "bottom top", scrub: true },
     });
   });
 }
@@ -229,6 +231,180 @@ function processLine() {
   });
 }
 
+function progress() {
+  const bar = document.querySelector<HTMLElement>("[data-progress]");
+  if (!bar) return;
+  gsap.to(bar, { scaleX: 1, ease: "none", scrollTrigger: { start: 0, end: "max", scrub: 0.3 } });
+}
+
+/** Ленты: скорость и направление — от прокрутки, крен — от скорости. */
+function marquee(): () => void {
+  const root = document.querySelector<HTMLElement>("[data-marquee]");
+  if (!root) return () => {};
+  const tracks = all("[data-marquee-track]", root).map((el) => ({ el, dir: Number(el.dataset.direction || 1), x: 0, width: 1 }));
+  const measure = () => tracks.forEach((t) => (t.width = (t.el.firstElementChild as HTMLElement).offsetWidth || 1));
+  measure();
+  let boost = 0;
+  let heading = 1;
+  let active = false;
+  ScrollTrigger.create({
+    trigger: root,
+    start: "top bottom",
+    end: "bottom top",
+    onToggle: (self) => (active = self.isActive),
+    onUpdate: (self) => {
+      boost = Math.max(boost, Math.min(Math.abs(self.getVelocity()) / 220, 14));
+      heading = self.direction;
+    },
+    onRefresh: measure,
+  });
+  const tick = (_time: number, deltaMs: number) => {
+    if (!active) return;
+    const dt = Math.min(deltaMs, 50) / 1000;
+    boost *= Math.pow(0.08, dt);
+    const skew = gsap.utils.clamp(-9, 9, boost * heading * 0.8);
+    tracks.forEach((t) => {
+      t.x -= t.dir * heading * (55 + boost * 70) * dt;
+      t.x %= t.width;
+      if (t.x > 0) t.x -= t.width;
+      t.el.style.transform = `translate3d(${t.x.toFixed(1)}px, 0, 0) skewX(${(skew * t.dir).toFixed(2)}deg)`;
+    });
+  };
+  gsap.ticker.add(tick);
+  return () => {
+    gsap.ticker.remove(tick);
+    tracks.forEach((t) => (t.el.style.transform = ""));
+  };
+}
+
+/** Абзац подхода: слова заливаются по очереди из контура, маркер
+ *  дорисовывается. Контур — того же цвета, что текст: непрочитанное слово
+ *  остаётся контрастным и читаемым. */
+function manifesto() {
+  const el = document.querySelector<HTMLElement>("[data-manifesto]");
+  if (!el) return;
+  SplitText.create(el, {
+    type: "words",
+    wordsClass: "manifesto-word",
+    // Для скринридера рядом есть обычный текст, разбивка спрятана целиком.
+    aria: "none",
+    autoSplit: true,
+    onSplit: (self) =>
+      gsap.fromTo(
+        self.words,
+        { color: "rgb(17 17 16 / 0)" },
+        {
+          color: "rgb(17 17 16 / 1)",
+          ease: "none",
+          stagger: 0.1,
+          scrollTrigger: { trigger: el, start: "top 82%", end: "bottom 48%", scrub: 0.5 },
+        },
+      ),
+  });
+  all("[data-manifesto-mark]", el).forEach((mark) => {
+    gsap.fromTo(
+      mark,
+      { backgroundSize: "0% 0.42em" },
+      {
+        backgroundSize: "100% 0.42em",
+        ease: "none",
+        scrollTrigger: { trigger: mark, start: "top 72%", end: "top 52%", scrub: 0.5 },
+      },
+    );
+  });
+}
+
+/** Услуги: на широком экране секция закреплена, лента карточек едет вбок. */
+function services() {
+  const root = document.querySelector<HTMLElement>("[data-services]");
+  const track = root?.querySelector<HTMLElement>("[data-services-track]");
+  const bar = root?.querySelector<HTMLElement>("[data-services-progress]");
+  if (!root || !track) return;
+  const mm = gsap.matchMedia();
+  mm.add("(min-width: 1024px)", () => {
+    const distance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: root,
+        start: "top top",
+        end: () => `+=${distance()}`,
+        pin: true,
+        scrub: 0.8,
+        invalidateOnRefresh: true,
+        anticipatePin: 1,
+      },
+    });
+    tl.to(track, { x: () => -distance(), ease: "none" }, 0);
+    if (bar) tl.to(bar, { scaleX: 1, ease: "none" }, 0);
+  });
+}
+
+/** Контакты: тёмный блок раскрывается из скруглённой карточки во всю ширину. */
+function contactReveal() {
+  const el = document.querySelector<HTMLElement>("#contact");
+  if (!el) return;
+  gsap.fromTo(
+    el,
+    { clipPath: "inset(7% 4% 0% 4% round 2.5rem)" },
+    {
+      clipPath: "inset(0% 0% 0% 0% round 0rem)",
+      ease: "none",
+      scrollTrigger: { trigger: el, start: "top bottom", end: "top 25%", scrub: true },
+    },
+  );
+}
+
+/** Имя в подвале: буквы поднимаются при появлении, у курсора — толстеют. */
+function footerName(fine: boolean): () => void {
+  const root = document.querySelector<HTMLElement>("[data-footer-name]");
+  if (!root) return () => {};
+  const letters = all(".footer-letter", root);
+  // Ширина каждой буквы — по самому жирному начертанию: от веса буквы
+  // соседи не должны ездить.
+  const fix = () => {
+    letters.forEach((l) => {
+      l.style.width = "";
+      l.style.setProperty("--w", "900");
+    });
+    const widths = letters.map((l) => l.getBoundingClientRect().width);
+    letters.forEach((l, i) => {
+      l.style.width = `${widths[i]}px`;
+      l.style.removeProperty("--w");
+    });
+  };
+  fix();
+  // Ширины по запасному шрифту не годятся — перемерить, когда приедет Onest.
+  void document.fonts.ready.then(fix);
+  gsap.from(letters, {
+    yPercent: 105,
+    duration: 1.2,
+    ease: "expo.out",
+    stagger: 0.06,
+    scrollTrigger: { trigger: root, start: "top 92%", once: true },
+  });
+  const onResize = () => fix();
+  window.addEventListener("resize", onResize);
+  if (!fine) return () => window.removeEventListener("resize", onResize);
+
+  const setters = letters.map((l) => gsap.quickTo(l, "--w", { duration: 0.6, ease: "power3.out" }));
+  const footer = root.closest("footer") ?? root;
+  const move = (event: PointerEvent) => {
+    letters.forEach((l, i) => {
+      const r = l.getBoundingClientRect();
+      const d = Math.hypot(event.clientX - (r.left + r.width / 2), event.clientY - (r.top + r.height / 2));
+      setters[i]!(Math.round(900 - gsap.utils.clamp(0, 1, d / 520) * 600));
+    });
+  };
+  const leave = () => setters.forEach((set) => set(300));
+  footer.addEventListener("pointermove", move);
+  footer.addEventListener("pointerleave", leave);
+  return () => {
+    window.removeEventListener("resize", onResize);
+    footer.removeEventListener("pointermove", move);
+    footer.removeEventListener("pointerleave", leave);
+  };
+}
+
 function header() {
   const el = document.querySelector<HTMLElement>("[data-header]");
   if (!el) return;
@@ -260,8 +436,8 @@ function hover(): () => void {
     });
   });
 
-  // Наклон: коллаж первого экрана и окна кейсов поворачиваются к курсору,
-  // слои с data-depth расходятся по глубине.
+  // Наклон: окна кейсов поворачиваются к курсору, телефон рядом с окном
+  // (data-depth) отходит по глубине.
   all("[data-tilt]").forEach((el) => {
     const strength = Number(el.dataset.tilt || 6);
     const target = el.querySelector<HTMLElement>("[data-tilt-target]") ?? el;
@@ -303,7 +479,7 @@ function hover(): () => void {
   return () => cleanups.forEach((fn) => fn());
 }
 
-function init() {
+export function init() {
   const mm = gsap.matchMedia();
   mm.add(
     {
@@ -312,41 +488,72 @@ function init() {
     },
     (ctx) => {
       const { motion, fine } = ctx.conditions as { motion: boolean; fine: boolean };
-      if (!motion) return;
+      const badge = document.querySelector<HTMLElement>("[data-badge]");
+      // Перевернуть визитку можно и без анимаций — это содержимое, не украшение.
+      if (!motion) {
+        const stopBadge = badge ? initBadge(badge, false) : () => {};
+        return () => stopBadge();
+      }
       // Класс включает то, что имеет смысл только при движении (кнопки паузы окон).
       document.documentElement.classList.add("motion-on");
 
       let stopLive = () => {};
       let stopHover = () => {};
       let stopFades = () => {};
+      let stopBadge = () => {};
+      let stopStickers = () => {};
+      let stopCursor = () => {};
+      let stopMarquee = () => {};
+      let stopFooter = () => {};
       let cancelled = false;
 
-      // Настройка частями, с передышками между ними. ctx.add — чтобы и то,
+      // Настройка мелкими задачами с передышками: каждая короче 50 мс даже на
+      // медленном телефоне, и первое касание не ждёт. ctx.add — чтобы и то,
       // что создано позже, откатилось вместе с контекстом.
       void (async () => {
         const onScreen = measureOnScreen();
-        ctx.add(() => {
-          header();
-          stopFades = fades(onScreen);
-          counters(onScreen);
-          checkmarks(onScreen);
-        });
-        await yieldToMain();
-        if (cancelled) return;
-        ctx.add(() => headings(onScreen));
-        await yieldToMain();
-        if (cancelled) return;
-        ctx.add(() => {
-          cases(onScreen);
-          parallax();
-          processLine();
-        });
-        await yieldToMain();
-        if (cancelled) return;
-        ctx.add(() => {
-          stopLive = initLiveWindows(fine);
-          if (fine) stopHover = hover();
-        });
+        const tasks: Array<() => void> = [
+          // Визитка — первым делом: она на первом экране и ждёт рук.
+          () => {
+            if (badge) {
+              stopBadge = initBadge(badge, true);
+              stopStickers = initStickers(badge.closest("section") ?? badge);
+            }
+            if (fine) stopCursor = initCursor();
+          },
+          // Закреплённая лента услуг добавляет странице высоты — она раньше
+          // всех триггеров ниже неё, тогда они сразу считаются с её учётом.
+          services,
+          () => {
+            header();
+            progress();
+          },
+          () => {
+            stopFades = fades(onScreen);
+          },
+          () => counters(onScreen),
+          () => checkmarks(onScreen),
+          ...headings(onScreen),
+          manifesto,
+          ...cases(onScreen),
+          processLine,
+          contactReveal,
+          () => {
+            stopLive = initLiveWindows(fine);
+            if (fine) stopHover = hover();
+          },
+          () => {
+            stopMarquee = marquee();
+          },
+          () => {
+            stopFooter = footerName(fine);
+          },
+        ];
+        for (const task of tasks) {
+          if (cancelled) return;
+          ctx.add(task);
+          await yieldToMain();
+        }
       })();
 
       return () => {
@@ -354,14 +561,13 @@ function init() {
         stopFades();
         stopLive();
         stopHover();
+        stopBadge();
+        stopStickers();
+        stopCursor();
+        stopMarquee();
+        stopFooter();
         document.documentElement.classList.remove("motion-on");
       };
     },
   );
 }
-
-// Запуск после загрузки и в свободное время: первый экран уже ожил на CSS,
-// скрипту некуда спешить, а его разбор не должен мешать первой отрисовке.
-const start = () => ("requestIdleCallback" in window ? requestIdleCallback(init, { timeout: 1200 }) : setTimeout(init, 200));
-if (document.readyState === "complete") start();
-else addEventListener("load", start, { once: true });

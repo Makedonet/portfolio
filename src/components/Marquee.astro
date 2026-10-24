@@ -1,0 +1,89 @@
+---
+// Две ленты крест-накрест между первым экраном и работами: что входит в
+// «под ключ». Едут навстречу друг другу, от прокрутки разгоняются, меняют
+// направление вслед за ней и кренятся на скорости (motion.ts). Без скрипта и
+// при «уменьшить движение» — просто стоят. Для скринридера это повтор
+// списка услуг, поэтому скрыто.
+const items = ["Сайты под ключ", "Дизайн", "Разработка", "Заявки в Telegram", "Яндекс Метрика", "Хостинг", "Поддержка"];
+const tapes = [
+  { tone: "tape-ink", direction: -1 },
+  { tone: "tape-accent", direction: 1 },
+];
+---
+
+<div class="marquee" aria-hidden="true" data-marquee>
+  {
+    tapes.map((tape) => (
+      <div class:list={["tape", tape.tone]}>
+        <div class="tape-track" data-marquee-track data-direction={tape.direction}>
+          {[0, 1].map(() => (
+            <span class="tape-group">
+              {items.map((item) => (
+                <>
+                  <span>{item}</span>
+                  <svg viewBox="0 0 24 24" class="tape-star" focusable="false">
+                    <path d="M12 2.5 14 9l6.6-1.6L16 12l4.6 4.6L14 15l-2 6.5L10 15l-6.6 1.6L8 12 3.4 7.4 10 9z" fill="currentColor" />
+                  </svg>
+                </>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .marquee {
+    position: relative;
+    overflow: hidden;
+    padding-block: 3.5rem 3rem;
+  }
+  .tape {
+    position: relative;
+    width: 110%;
+    margin-left: -5%;
+    overflow: hidden;
+    padding-block: 0.85rem;
+    font-size: clamp(1.35rem, 3.2vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tape-ink {
+    z-index: 1;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    rotate: -2.5deg;
+  }
+  .tape-accent {
+    margin-top: -1.6rem;
+    background: var(--color-accent);
+    color: var(--color-ink);
+    rotate: 2deg;
+  }
+  .tape-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+  .tape-group {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+  .tape-group > span {
+    padding-inline: 0.55em;
+  }
+  .tape-star {
+    width: 0.7em;
+    height: 0.7em;
+    flex: none;
+  }
+  .tape-ink .tape-star {
+    color: var(--color-accent);
+  }
+</style>

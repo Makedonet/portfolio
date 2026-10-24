@@ -1,15 +1,10 @@
 ---
-import LiveWindow from "./LiveWindow.astro";
+import Badge from "./Badge.astro";
 import Icon from "./Icon.astro";
 import MetricValue from "./MetricValue.astro";
-import { facts, works } from "../data/works";
+import { facts } from "../data/works";
 import { phone } from "../data/site";
 import { typo } from "../lib/typo";
-
-const work = (id: string) => works.find((w) => w.id === id)!;
-const mc = work("mc-project");
-const moyka = work("moyka");
-const shino = work("shinomontazh");
 
 // Слова заголовка поднимаются из-под маски по очереди (global.css, .hero-word).
 const title = ["Сайты"];
@@ -18,8 +13,11 @@ const subtitle = ["от идеи", "до первых", "заявок"];
 ---
 
 <section id="top" aria-labelledby="hero-title" class="relative overflow-x-clip">
-  <div class="container-page grid gap-14 pt-10 pb-16 sm:pt-14 lg:grid-cols-12 lg:items-center lg:gap-8 lg:pt-16 lg:pb-20">
-    <div class="lg:col-span-6">
+  {/* Текст прижат к верху, а не центрирован по высоте: иначе, когда шрифт
+      приезжает после первой отрисовки и высота строк чуть меняется, вся
+      колонка съезжала бы на половину разницы — это сдвиг макета (CLS). */}
+  <div class="container-page relative grid gap-6 pt-10 pb-10 sm:pt-14 lg:min-h-[44rem] lg:grid-cols-12 lg:gap-8 lg:pt-[8.5rem] lg:pb-16 xl:min-h-[46rem]">
+    <div class="relative z-[3] lg:col-span-7">
       <h1 id="hero-title" class="font-bold tracking-[-0.035em]">
         <span class="block text-[3.25rem] leading-[1.02] sm:text-7xl xl:text-[5.25rem]">
           {
@@ -81,60 +79,10 @@ const subtitle = ["от идеи", "до первых", "заявок"];
       </p>
     </div>
 
-    {/* Три работы одним кадром, и все три «играют». Окно позади видно только
-        на широком экране. Слои расходятся под курсором (data-depth) и при
-        прокрутке (data-parallax); пауза — кнопкой в строке адреса. */}
-    <div class="relative lg:col-span-6" role="group" aria-label="Примеры работ" data-live-group data-tilt="7">
-      <div class="relative mx-auto max-w-[38rem] pb-8 lg:mr-0 lg:max-w-none lg:pt-14 lg:pb-10" data-tilt-target>
-        <div class="absolute top-0 right-0 hidden w-[68%] lg:block" data-depth="14" data-parallax="-10">
-          <div class="hero-pop" style="--d: 0.5s; --r: 2deg">
-            <LiveWindow
-              scenes={moyka.screens.desktop}
-              device="desktop"
-              sizes="26rem"
-              label={`Сайт ${moyka.urlLabel} листается сам`}
-              href={moyka.url}
-              delay={2.4}
-            />
-          </div>
-        </div>
-        <div class="relative lg:w-[86%]" data-depth="24" data-parallax="-3">
-          <div class="hero-pop" style="--d: 0.3s">
-            {/* Здесь только главная: прогулка по страницам — в кейсе ниже, а
-                первому экрану незачем сразу качать четыре длинных кадра. */}
-            <LiveWindow
-              scenes={mc.screens.desktop.slice(0, 1)}
-              device="desktop"
-              sizes="(min-width: 1280px) 34rem, (min-width: 1024px) 44vw, (min-width: 640px) 36rem, 92vw"
-              label={`Сайт ${mc.urlLabel} листается сам`}
-              href={mc.url}
-              priority
-              toggle="окна на первом экране"
-              delay={0.4}
-            />
-          </div>
-        </div>
-        {
-          shino.screens.mobile && (
-            <div class="absolute right-[3%] bottom-0 w-[25%] lg:right-0 lg:w-[23%]" data-depth="38" data-parallax="-26">
-              <div class="hero-pop" style="--d: 0.65s; --r: -3deg">
-                <LiveWindow
-                  scenes={[shino.screens.mobile]}
-                  device="mobile"
-                  sizes="(min-width: 1024px) 9rem, 24vw"
-                  label={`Мобильная версия ${shino.urlLabel} листается сама`}
-                  href={shino.url}
-                  eager
-                  delay={1.4}
-                />
-              </div>
-            </div>
-          )
-        }
-      </div>
+    <div class="lg:col-span-5">
+      <Badge />
     </div>
   </div>
-
   <div class="border-y border-line bg-surface">
     <dl class="container-page grid grid-cols-2 lg:grid-cols-4">
       {

@@ -1,0 +1,48 @@
+---
+// Подход одним абзацем крупно. При прокрутке слова заливаются по очереди —
+// сначала они только контуром, как будто текст читают вслух, — и маркер
+// дорисовывается под ключевыми словами (motion.ts). Скринридер читает
+// обычный текст из sr-only: разбивка по словам ему ни к чему. Без скрипта и
+// при «уменьшить движение» — обычный абзац с маркером.
+import { Picture } from "astro:assets";
+import { typo } from "../lib/typo";
+import head from "../assets/avatar/head.png";
+
+const before = typo("Хороший сайт —");
+const mark1 = typo("не картинка");
+const middle = typo(". Он быстро открывается, ведёт к заявке и не ломается, когда никто не смотрит. Поэтому я веду проект");
+const mark2 = typo("целиком");
+const after = typo(": от структуры и текстов до мониторинга после запуска.");
+const plain = "Хороший сайт — не картинка. Он быстро открывается, ведёт к заявке и не ломается, когда никто не смотрит. Поэтому я веду проект целиком: от структуры и текстов до мониторинга после запуска.";
+---
+
+<section aria-labelledby="approach-title" class="py-24 sm:py-32 lg:py-40">
+  <div class="container-page">
+    <h2 id="approach-title" class="sr-only">Подход</h2>
+    <p class="max-w-[60rem] text-[2rem] leading-[1.12] font-bold tracking-[-0.03em] text-balance sm:text-5xl lg:text-[4rem]">
+      <span class="sr-only">{plain}</span>
+      <span aria-hidden="true" data-manifesto>
+        <Fragment set:html={before} />{" "}<span class="marker-scroll" data-manifesto-mark set:html={mark1} /><Fragment
+          set:html={middle}
+        />{" "}<span class="marker-scroll" data-manifesto-mark set:html={mark2} /><Fragment set:html={after} />
+      </span>
+    </p>
+    <div class="mt-10 flex items-center gap-4 sm:mt-12" data-fade>
+      <Picture
+        src={head}
+        alt=""
+        widths={[56, 112, 168]}
+        sizes="56px"
+        formats={["avif"]}
+        fallbackFormat="webp"
+        loading="lazy"
+        decoding="async"
+        class="size-14 rounded-full bg-accent"
+      />
+      <p class="leading-snug">
+        <span class="block font-semibold">Максим</span>
+        <span class="block text-muted">отвечаю за сайт сам, без посредников</span>
+      </p>
+    </div>
+  </div>
+</section>

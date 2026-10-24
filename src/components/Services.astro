@@ -5,27 +5,39 @@ import { services } from "../data/services";
 import { typo } from "../lib/typo";
 ---
 
-<section aria-labelledby="services-title" id="services" class="scroll-mt-16 bg-surface py-20 sm:py-28">
-  <div class="container-page">
-    <SectionHead
-      id="services-title"
-      title="«Под ключ» — это всё, что нужно сайту"
-      intro="Не придётся искать отдельно дизайнера, верстальщика и того, кто «подключит формы». Один человек ведёт сайт от первого звонка до запуска и дальше."
-    />
+<section aria-labelledby="services-title" id="services" class="scroll-mt-16 overflow-x-clip bg-surface">
+  {/* На широком экране секция закрепляется, а карточки едут вбок, пока
+      страница листается вниз; полоса снизу — сколько проехали (motion.ts).
+      На телефоне, без скрипта и при «уменьшить движение» — обычная сетка.
+      Ячейка при наведении заливается жёлтым снизу (global.css, .service). */}
+  <div class="services-pin bg-surface py-20 sm:py-28" data-services>
+    <div class="container-page">
+      <SectionHead
+        id="services-title"
+        title="«Под ключ» — это всё, что нужно сайту"
+        intro="Не придётся искать отдельно дизайнера, верстальщика и того, кто «подключит формы». Один человек ведёт сайт от первого звонка до запуска и дальше."
+      />
+    </div>
 
-    {/* Ячейка при наведении заливается жёлтым снизу (global.css, .service). */}
-    <ul class="mt-12 grid border-t border-l border-line sm:mt-16 sm:grid-cols-2 lg:grid-cols-3" data-stagger>
+    <ul class="services-track mt-12 sm:mt-16" data-services-track data-stagger>
       {
-        services.map((service) => (
-          <li class="service flex flex-col gap-3 border-r border-b border-line p-6 sm:p-8">
+        services.map((service, i) => (
+          <li class="service flex flex-col rounded-2xl border border-line bg-paper p-6 sm:p-7">
             <div class="flex items-start justify-between gap-4">
-              <h3 class="text-xl font-semibold tracking-[-0.015em]">{service.title}</h3>
-              <Icon name="arrow-up-right" class="service-arrow mt-1 size-5" />
+              <span class="font-mono text-sm text-muted" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <Icon name="arrow-up-right" class="service-arrow size-5" />
             </div>
-            <p class="leading-relaxed text-ink-2" set:html={typo(service.text)} />
+            <h3 class="mt-10 text-[1.375rem] leading-tight font-semibold tracking-[-0.02em] sm:mt-14">{service.title}</h3>
+            <p class="mt-3 leading-relaxed text-ink-2" set:html={typo(service.text)} />
           </li>
         ))
       }
     </ul>
+
+    <div class="services-progress container-page mt-10" aria-hidden="true">
+      <span class="block h-[2px] origin-left scale-x-0 bg-ink" data-services-progress></span>
+    </div>
   </div>
 </section>

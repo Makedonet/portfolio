@@ -1,0 +1,704 @@
+---
+// Визитка на ленте — первый экран. Лента свисает из-под шапки (на телефоне —
+// с гвоздика), визитку можно схватить и бросить: она качается, крутится и
+// приходит в покой (scripts/badge.ts). Клик или кнопка — перевернуть: на
+// обороте фото, Telegram с QR-кодом и телефон. Портрет на лицевой стороне —
+// полутоновая «печать» (tools/halftone.mjs); под курсором точки
+// разбегаются и проступает настоящее фото (scripts/portrait.ts).
+// Наклейки вокруг можно отклеить и перетащить (scripts/stickers.ts).
+// Без скрипта и при «уменьшить движение» визитка просто висит; перевернуть
+// её можно и тогда — это не анимация, а содержимое.
+// Размеры внутри — в em: визитка целиком масштабируется размером шрифта.
+import type { ImageMetadata } from "astro";
+import { getImage } from "astro:assets";
+import QRCode from "qrcode";
+import Logo from "./Logo.astro";
+import { contact, phone } from "../data/site";
+import face from "../assets/avatar/face.png";
+import mountains from "../assets/avatar/mountains.jpg";
+import halftone from "../assets/avatar/halftone.svg?url";
+
+const telegram = contact("telegram");
+
+// QR-код рисуется при сборке: на странице — готовый SVG, без библиотек.
+const qr = (
+  await QRCode.toString(telegram.href, {
+    type: "svg",
+    margin: 0,
+    errorCorrectionLevel: "M",
+    color: { dark: "#111110ff", light: "#00000000" },
+  })
+).replace("<svg ", '<svg aria-hidden="true" focusable="false" ');
+
+// Текста на ленте — с запасом на её длину, не больше: лишний мелкий текст
+// только мешает поисковикам и скринридерам (лента скрыта, но всё же).
+const strapText = "Максим • сайты под ключ • ".repeat(2);
+// Ширина портрета на визитке в CSS-пикселях — по ней браузер выбирает размер фото.
+const portraitSizes = "(min-width: 1280px) 340px, (min-width: 1024px) 320px, (min-width: 640px) 300px, 276px";
+const photoSizes = "(min-width: 1280px) 308px, (min-width: 1024px) 290px, 260px";
+
+// Цветной портрет нужен только в «линзе» под курсором, фото с гор — только на
+// обороте. Их адреса лежат в data-атрибутах, грузит скрипт после загрузки
+// страницы (scripts/badge.ts): к первой отрисовке они не нужны.
+const variants = async (src: ImageMetadata, widths: number[]) => ({
+  avif: (await getImage({ src, widths, format: "avif", quality: 60 })).srcSet.attribute,
+  webp: await getImage({ src, widths, format: "webp", quality: 78 }),
+});
+const faceImage = await variants(face, [360, 540, 720]);
+const photoImage = await variants(mountains, [320, 480, 640]);
+---
+
+<div class="badge-stage" data-badge>
+  <svg class="badge-strap" aria-hidden="true" focusable="false">
+    <svg x="50%" overflow="visible">
+      {/* Лента до покоя — прямая. Скрипт перерисовывает видимую из двух. */}
+      <path id="badge-strap-m" class="strap lg:hidden" d="M0 0V84" data-strap></path>
+      <path id="badge-strap-d" class="strap hidden lg:inline" d="M0 -40V150" data-strap></path>
+      <text class="strap-text lg:hidden" dy="0.35em"><textPath href="#badge-strap-m" data-strap-text>{strapText}</textPath></text>
+      <text class="strap-text hidden lg:inline" dy="0.35em"><textPath href="#badge-strap-d" data-strap-text>{strapText}</textPath></text>
+    </svg>
+  </svg>
+  <span class="badge-pin lg:hidden" aria-hidden="true"></span>
+
+  <div class="sticker sticker-seal" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -10deg">
+    <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+      <defs>
+        <path id="seal-ring" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"></path>
+      </defs>
+      <circle cx="60" cy="60" r="59" fill="var(--color-ink)"></circle>
+      <g class="seal-spin">
+        <text class="seal-text" dy="0.36em"><textPath href="#seal-ring" textLength="274" lengthAdjust="spacing">сайты под ключ • сайты под ключ • </textPath></text>
+      </g>
+      <svg x="37" y="46" width="46" height="27" viewBox="0 0 41 24" class="text-paper">
+        <rect width="24" height="24" rx="7" fill="var(--color-accent)"></rect>
+        <path d="M6 18V6.5l6 7 6-7V18" fill="none" stroke="var(--color-ink)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M24 9.5h15a1.8 1.8 0 0 1 1.8 1.8v1.4a1.8 1.8 0 0 1-1.8 1.8h-1.3v3.3a1 1 0 0 1-1 1h-1.9a1 1 0 0 1-1-1v-3.3h-1.6v1.9a1 1 0 0 1-1 1h-1.9a1 1 0 0 1-1-1v-1.9H24z" fill="currentColor"></path>
+      </svg>
+    </svg>
+  </div>
+  <div class="sticker sticker-score" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: 8deg">
+    <svg viewBox="0 0 44 44" class="score-ring" aria-hidden="true" focusable="false">
+      <circle cx="22" cy="22" r="18" fill="none" stroke="rgb(31 157 85 / 0.18)" stroke-width="4"></circle>
+      <circle cx="22" cy="22" r="18" fill="none" stroke="var(--color-ok)" stroke-width="4" stroke-linecap="round" stroke-dasharray="111.97 113.1" transform="rotate(-90 22 22)"></circle>
+      <text x="22" y="22" dy="0.36em" text-anchor="middle" class="score-value">99</text>
+    </svg>
+    <span class="score-label">PageSpeed<br />на&nbsp;компьютере</span>
+  </div>
+  <div class="sticker sticker-tg hidden sm:flex" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -6deg">
+    <svg viewBox="0 0 24 24" class="tg-plane" aria-hidden="true" focusable="false">
+      <path d="M21.5 4.3 2.9 11.5c-1.3.5-1.3 1.2-.2 1.6l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.9-1.4-1.6Z" fill="currentColor"></path>
+    </svg>
+    <span>Заявки<br />в&nbsp;Telegram</span>
+  </div>
+
+  <div class="badge" role="group" aria-label="Визитка" data-badge-card data-cursor="Тяните или кликните">
+    <div class="badge-swing" data-badge-swing>
+      <div class="badge-spin" data-badge-spin>
+        <div class="badge-face badge-front" data-badge-face="front">
+          <span class="badge-slot" aria-hidden="true"></span>
+          <span class="badge-logo"><Logo class="h-full w-auto" /></span>
+          <span class="badge-holo" aria-hidden="true"></span>
+          <div class="badge-portrait" role="img" aria-label="Фото: Максим" data-portrait>
+            <img src={halftone} alt="" width="360" height="371" class="portrait-dots" loading="eager" decoding="async" data-portrait-dots />
+            <canvas class="portrait-canvas" aria-hidden="true" data-portrait-canvas></canvas>
+            <picture>
+              <source type="image/avif" data-srcset={faceImage.avif} sizes={portraitSizes} />
+              <img
+                class="portrait-color"
+                data-srcset={faceImage.webp.srcSet.attribute}
+                data-src={faceImage.webp.src}
+                sizes={portraitSizes}
+                width={face.width}
+                height={face.height}
+                alt=""
+                decoding="async"
+                data-badge-deferred
+              />
+            </picture>
+          </div>
+          <div class="badge-band">
+            <p class="badge-name">Максим</p>
+            <p class="badge-role">разработка сайтов под&nbsp;ключ</p>
+            <svg class="badge-code" viewBox="0 0 46 22" aria-hidden="true" focusable="false">
+              <path
+                d="M0 0h2v22H0zm4 0h1v22H4zm3 0h3v22H7zm5 0h1v22h-1zm3 0h1v22h-1zm3 0h3v22h-3zm5 0h1v22h-1zm3 0h2v22h-2zm4 0h1v22h-1zm3 0h3v22h-3zm5 0h1v22h-1zm3 0h2v22h-2zm4 0h1v22h-1z"
+                fill="currentColor"></path>
+            </svg>
+          </div>
+          <span class="badge-sheen" aria-hidden="true"></span>
+        </div>
+
+        <div class="badge-face badge-back" data-badge-face="back" inert>
+          <span class="badge-slot" aria-hidden="true"></span>
+          <div class="badge-photo">
+            <picture>
+              <source type="image/avif" data-srcset={photoImage.avif} sizes={photoSizes} />
+              <img
+                class="h-full w-full object-cover object-[62%_40%]"
+                data-srcset={photoImage.webp.srcSet.attribute}
+                data-src={photoImage.webp.src}
+                sizes={photoSizes}
+                width={mountains.width}
+                height={mountains.height}
+                alt="Максим в горах"
+                decoding="async"
+                data-badge-deferred
+              />
+            </picture>
+          </div>
+          <div class="badge-tg">
+            <div class="badge-qr" role="img" aria-label={`QR-код: Telegram ${telegram.handle}`} set:html={qr} />
+            <div class="min-w-0">
+              <p class="badge-small">Telegram</p>
+              <a href={telegram.href} target="_blank" rel="noopener noreferrer" class="badge-handle" data-cursor="">
+                {telegram.handle}<span class="sr-only"> (откроется в новой вкладке)</span>
+              </a>
+              <p class="badge-small badge-hint">Наведите камеру телефона — откроется чат</p>
+            </div>
+          </div>
+          <div class="badge-call">
+            <a href={phone.href} class="badge-phone" data-cursor="">{phone.display}</a>
+            <p class="badge-small">Звонок, WhatsApp или&nbsp;MAX</p>
+          </div>
+          <span class="badge-sheen" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <svg class="badge-clip" viewBox="0 0 48 56" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="badge-metal" x1="0" x2="1">
+            <stop offset="0" stop-color="#8d8c86"></stop>
+            <stop offset="0.45" stop-color="#f4f3ee"></stop>
+            <stop offset="0.6" stop-color="#c9c8c1"></stop>
+            <stop offset="1" stop-color="#7c7b75"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="24" cy="11" r="7.5" fill="none" stroke="url(#badge-metal)" stroke-width="3.4"></circle>
+        <rect x="9" y="19.5" width="30" height="34" rx="6" fill="#111110" opacity="0.22"></rect>
+        <rect x="9" y="18" width="30" height="34" rx="6" fill="url(#badge-metal)"></rect>
+        <rect x="14" y="40" width="20" height="4" rx="2" fill="#6f6e68" opacity="0.55"></rect>
+      </svg>
+
+      <button type="button" class="badge-flip" aria-pressed="false" aria-label="Оборот визитки: фото и контакты" data-badge-flip data-sound="flip" data-cursor="">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Сцена: на телефоне — блок под текстом, на широком экране — правая часть
+     первого экрана во всю его высоту. --rest — где висит крепление визитки,
+     --anchor — откуда идёт лента. Числа те же, что в прямых лентах выше. */
+  .badge-stage {
+    --rest: 84px;
+    position: relative;
+    height: calc(var(--rest) + 33em);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  @media (min-width: 640px) {
+    .badge-stage {
+      font-size: 14px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .badge-stage {
+      --rest: 150px;
+      position: absolute;
+      top: 0;
+      right: 2rem;
+      bottom: 0;
+      width: 40%;
+      height: auto;
+      font-size: 15px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .badge-stage {
+      font-size: 16px;
+    }
+  }
+
+  .badge-strap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .strap {
+    fill: none;
+    stroke: var(--color-ink);
+    stroke-width: max(1.55em, 22px);
+    stroke-linejoin: round;
+  }
+  /* Мельче 12px шрифт не делаем нигде: это порог читаемости. */
+  .strap-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    fill: var(--color-accent);
+  }
+
+  .badge-pin {
+    position: absolute;
+    left: 50%;
+    top: -9px;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, var(--color-accent) 22% 62%, #c9a321 100%);
+    box-shadow: 0 3px 6px rgb(17 17 16 / 0.35);
+    z-index: 1;
+  }
+
+  /* Визитка: 340 × 476 при шрифте 16px. Крепление — над верхним краем, в
+     точке (50%, -0.9em): вокруг неё визитка качается. */
+  .badge {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--rest) + 0.9em);
+    width: 21.25em;
+    height: 29.75em;
+    margin-left: -10.625em;
+    transform-origin: 50% -0.9em;
+    pointer-events: auto;
+    touch-action: pan-y;
+    z-index: 2;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  :global(.motion-on) .badge {
+    cursor: grab;
+  }
+  .badge:global(.is-held) {
+    cursor: grabbing;
+  }
+  .badge :global(img) {
+    -webkit-user-drag: none;
+  }
+  .badge-swing {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% -0.9em;
+    perspective: 1400px;
+  }
+  .badge-spin {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+  }
+  .badge-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 1.375em;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow:
+      0 1px 2px rgb(17 17 16 / 0.12),
+      0 1.4em 2.6em -1em rgb(17 17 16 / 0.42);
+  }
+  .badge-back {
+    transform: rotateY(180deg);
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* Лицевая сторона: жёлтая, с растром точек в углу — эхо портрета. */
+  .badge-front {
+    background: var(--color-accent);
+  }
+  .badge-front::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(17 17 16 / 0.2) 0.07em, transparent 0.09em);
+    background-size: 0.55em 0.55em;
+    -webkit-mask-image: linear-gradient(215deg, #000, transparent 42%);
+    mask-image: linear-gradient(215deg, #000, transparent 42%);
+  }
+  .badge-slot {
+    position: absolute;
+    top: 0.85em;
+    left: 50%;
+    width: 3.4em;
+    height: 0.75em;
+    margin-left: -1.7em;
+    border-radius: 1em;
+    background: var(--color-paper);
+    box-shadow: inset 0 0.12em 0.22em rgb(17 17 16 / 0.5);
+  }
+  /* Знак на жёлтом — наоборот: чёрная головка, жёлтая «М». */
+  .badge-logo {
+    position: absolute;
+    top: 1.05em;
+    left: 1.2em;
+    display: block;
+    height: 1.45em;
+    color: var(--color-ink);
+  }
+  .badge-logo :global(rect) {
+    fill: var(--color-ink);
+  }
+  .badge-logo :global(path:first-of-type) {
+    stroke: var(--color-accent);
+  }
+  /* Голограмма: радужная фольга, переливается при наклоне (--holo из badge.ts). */
+  .badge-holo {
+    position: absolute;
+    top: 8.6em;
+    left: 1.3em;
+    width: 3.3em;
+    height: 3.3em;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 28%, rgb(255 255 255 / 0.9), transparent 34%),
+      conic-gradient(from var(--holo, 0deg), #ff9bd2, #ffe07a, #9bf0b5, #8ad3ff, #c4a3ff, #ff9bd2);
+    box-shadow:
+      inset 0 0 0 0.18em rgb(255 255 255 / 0.55),
+      0 0.15em 0.4em rgb(17 17 16 / 0.25);
+    z-index: 1;
+  }
+  .badge-holo::after {
+    content: "";
+    position: absolute;
+    inset: 0.85em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 18V6.5l6 7 6-7V18' fill='none' stroke='%23111110' stroke-opacity='.55' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  .badge-portrait {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5.2em;
+    aspect-ratio: 360 / 371;
+  }
+  .portrait-dots,
+  .portrait-canvas,
+  .portrait-color {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .portrait-canvas {
+    display: none;
+  }
+  /* Цветное фото — только в «линзе» под курсором (--lx, --ly, --lr). */
+  .portrait-color {
+    -webkit-mask-image: radial-gradient(circle at var(--lx, 50%) var(--ly, 50%), #000 calc(var(--lr, 0px) - 1.2em), transparent var(--lr, 0px));
+    mask-image: radial-gradient(circle at var(--lx, 50%) var(--ly, 50%), #000 calc(var(--lr, 0px) - 1.2em), transparent var(--lr, 0px));
+  }
+  :global(.portrait-live) .portrait-dots {
+    visibility: hidden;
+  }
+  :global(.portrait-live) .portrait-canvas {
+    display: block;
+  }
+
+  .badge-band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6em;
+    padding: 1.05em 1.25em 0;
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .badge-name {
+    font-size: 2.15em;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+  .badge-role {
+    margin-top: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted-dark);
+  }
+  .badge-code {
+    position: absolute;
+    right: 1.25em;
+    top: 1.25em;
+    width: 2.9em;
+    color: rgb(243 242 236 / 0.75);
+  }
+  .badge-sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at var(--gx, 50%) var(--gy, -20%), rgb(255 255 255 / 0.5), transparent 46%),
+      linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.28) 46%, transparent 58%) var(--sx, 120%) 0 / 260% 100% no-repeat;
+    mix-blend-mode: soft-light;
+    opacity: var(--glare, 0.55);
+  }
+
+  /* Оборот. */
+  .badge-photo {
+    position: absolute;
+    top: 2.2em;
+    left: 1em;
+    right: 1em;
+    height: 12em;
+    overflow: hidden;
+    border-radius: 0.875em;
+    background: var(--color-ink-2);
+  }
+  .badge-tg {
+    position: absolute;
+    top: 15.2em;
+    left: 1.25em;
+    right: 1.25em;
+    display: flex;
+    gap: 1em;
+    align-items: center;
+  }
+  .badge-qr {
+    flex: none;
+    width: 6.25em;
+    height: 6.25em;
+    padding: 0.45em;
+    border-radius: 0.6em;
+    background: var(--color-paper);
+  }
+  .badge-qr :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .badge-small {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--color-muted-dark);
+  }
+  .badge-hint {
+    margin-top: 0.45em;
+  }
+  .badge-handle {
+    display: inline-block;
+    margin-top: 0.1em;
+    font-size: 1.3em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-decoration-color: rgb(255 212 59 / 0.35);
+    text-underline-offset: 0.2em;
+  }
+  .badge-handle:hover {
+    text-decoration-color: currentColor;
+  }
+  .badge-call {
+    position: absolute;
+    left: 1.25em;
+    right: 1.25em;
+    bottom: 1.35em;
+    padding-top: 1em;
+    border-top: 1px solid var(--color-line-dark);
+  }
+  .badge-phone {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-paper);
+    white-space: nowrap;
+  }
+  .badge-phone:hover {
+    color: var(--color-accent);
+  }
+
+  .badge-clip {
+    position: absolute;
+    left: 50%;
+    top: -1.6em;
+    width: 2.75em;
+    margin-left: -1.375em;
+    pointer-events: none;
+  }
+
+  .badge-flip {
+    position: absolute;
+    right: -0.85em;
+    bottom: -0.85em;
+    display: grid;
+    place-items: center;
+    width: max(2.9em, 44px);
+    height: max(2.9em, 44px);
+    border-radius: 50%;
+    border: 0.2em solid var(--color-paper);
+    background: var(--color-ink);
+    color: var(--color-accent);
+    box-shadow: 0 0.4em 0.9em -0.3em rgb(17 17 16 / 0.6);
+    transition: scale 0.3s var(--ease-out-expo);
+  }
+  .badge-flip svg {
+    width: 45%;
+    height: 45%;
+    transition: rotate 0.6s var(--ease-out-expo);
+  }
+  .badge-flip:hover {
+    scale: 1.08;
+  }
+  .badge-flip:hover svg {
+    rotate: 180deg;
+  }
+  /* Без скрипта перевернуть нечем. */
+  :global(html:not(.js)) .badge-flip {
+    display: none;
+  }
+
+  /* Наклейки: лежат за визиткой, при перетаскивании — поверх всего. */
+  .sticker {
+    position: absolute;
+    z-index: 1;
+    rotate: var(--r, 0deg);
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    box-shadow: 0 0.35em 0.8em -0.2em rgb(17 17 16 / 0.28);
+  }
+  :global(.motion-on) .sticker {
+    cursor: grab;
+  }
+  .sticker:global(.is-dragging) {
+    z-index: 5;
+    cursor: grabbing;
+  }
+  .sticker-seal {
+    border-radius: 50%;
+    width: 6.25em;
+    left: 1%;
+    top: 0.4em;
+  }
+  .sticker-seal svg {
+    display: block;
+  }
+  .seal-spin {
+    transform-origin: 60px 60px;
+  }
+  .seal-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    fill: var(--color-paper);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .seal-spin {
+      animation: seal-spin 22s linear infinite;
+    }
+  }
+  @keyframes seal-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .sticker-score {
+    right: 1%;
+    top: 1.6em;
+    display: flex;
+    align-items: center;
+    gap: 0.55em;
+    padding: 0.55em 0.85em 0.55em 0.55em;
+    border-radius: 1em;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+  }
+  .score-ring {
+    width: 2.9em;
+    height: 2.9em;
+  }
+  .score-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    fill: var(--color-ok-text);
+  }
+  .score-label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .sticker-tg {
+    right: 0.5em;
+    bottom: 3.5em;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.6em 0.9em 0.6em 0.65em;
+    border-radius: 999px;
+    background: var(--color-paper);
+    border: 1.5px solid var(--color-ink);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .tg-plane {
+    width: 2em;
+    height: 2em;
+    padding: 0.35em;
+    border-radius: 50%;
+    background: #2aabee;
+    color: #fff;
+  }
+  @media (min-width: 640px) {
+    .sticker-seal {
+      width: 7.5em;
+      left: 6%;
+      top: calc(var(--rest) + 17em);
+    }
+    .sticker-score {
+      right: 6%;
+      top: 2em;
+    }
+    .sticker-tg {
+      right: 7%;
+      bottom: 6em;
+    }
+  }
+  @media (min-width: 1024px) {
+    .sticker-seal {
+      left: -2.5em;
+      top: auto;
+      bottom: 9.5em;
+    }
+    .sticker-score {
+      right: -0.5em;
+      top: 3.4em;
+    }
+    .sticker-tg {
+      right: -2.75em;
+      bottom: 1.6em;
+    }
+  }
+
+  /* Появление: визитка влетает сбоку и раскачивается вокруг крепления. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .badge-swing {
+      animation: badge-swing 2.2s linear(0, 0.38 6%, 0.83 13%, 1.13 19%, 1.24 24%, 1.18 30%, 1.02 36%, 0.9 42%, 0.86 47%, 0.91 54%, 0.99 61%, 1.04 68%, 1.04 76%, 1.01 84%, 0.99 92%, 1) 0.2s both;
+    }
+  }
+  @keyframes badge-swing {
+    from {
+      rotate: 16deg;
+    }
+    to {
+      rotate: 0deg;
+    }
+  }
+</style>
