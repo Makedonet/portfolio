@@ -1,0 +1,80 @@
+---
+// Карточка цифры в кейсе: значение крупно и подпись под ним. У оценок —
+// кольцо (дорисовывается при появлении, motion.ts), у «было/стало» — две
+// полосы: обе вырастают, затем новая сжимается, и её число убывает вместе
+// с ней. Без скрипта и при «уменьшить движение» всё сразу в конечном виде.
+// Внутри <dl>: подпись — <dt>, значение с картинкой — <dd>.
+import MetricValue from "./MetricValue.astro";
+import type { Metric } from "../data/works";
+import { typo } from "../lib/typo";
+
+interface Props {
+  metric: Metric;
+  /** Во всю ширину ряда: «было/стало» — всегда, обычная — если осталась одна. */
+  wide?: boolean;
+}
+
+const { metric, wide = false } = Astro.props;
+const visual = metric.visual;
+const R = 19;
+const LENGTH = 2 * Math.PI * R;
+const ringOffset = visual?.type === "ring" ? LENGTH * (1 - visual.value / visual.max) : 0;
+const barScale = visual?.type === "bars" ? visual.after / visual.before : 1;
+---
+
+<div class:list={["metric", (wide || visual?.type === "bars") && "metric-wide"]}>
+  <dt class="metric-label" set:html={typo(metric.label)} />
+  <dd class="metric-body">
+    {
+      visual?.type === "ring" && (
+        <svg viewBox="0 0 48 48" class="metric-ring" aria-hidden="true" focusable="false">
+          <circle cx="24" cy="24" r={R} class="ring-track" />
+          <circle
+            cx="24"
+            cy="24"
+            r={R}
+            class="ring-value"
+            transform="rotate(-90 24 24)"
+            stroke-dasharray={LENGTH.toFixed(2)}
+            stroke-dashoffset={ringOffset.toFixed(2)}
+            data-ring={ringOffset.toFixed(2)}
+            data-ring-length={LENGTH.toFixed(2)}
+          />
+        </svg>
+      )
+    }
+    <span class="metric-value"><MetricValue value={metric.value} /></span>
+    {
+      visual?.type === "bars" && (
+        <>
+          <span class="metric-bars" aria-hidden="true">
+            <span class="bar-row">
+              <span class="bar-name">было</span>
+              <span class="bar">
+                <span class="bar-fill bar-before" />
+              </span>
+              <span class="bar-figure">
+                {visual.before} {visual.unit}
+              </span>
+            </span>
+            <span class="bar-row">
+              <span class="bar-name">стало</span>
+              <span class="bar">
+                <span class="bar-fill bar-after" style={`transform: scaleX(${barScale.toFixed(3)})`} data-bar={barScale.toFixed(3)} />
+              </span>
+              <span class="bar-figure">
+                <span data-bar-from={visual.before} data-bar-to={visual.after}>
+                  {visual.after}
+                </span>{" "}
+                {visual.unit}
+              </span>
+            </span>
+          </span>
+          <span class="sr-only">
+            : было {visual.before} {visual.unit}, стало {visual.after} {visual.unit}
+          </span>
+        </>
+      )
+    }
+  </dd>
+</div>

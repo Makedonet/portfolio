@@ -1,56 +1,25 @@
 ---
-// Значение метрики. Первое число досчитывает при прокрутке (data-count,
-// motion.ts); в «314 → 47 КБ» вес сам уменьшается с 314 до 47, в «1 → 17»
-// страницы прибавляются с одной до семнадцати. Стрелка —
-// SVG: глифа «→» нет в наборах шрифтов сайта. Для скринридера — словами.
+// Значение метрики. Первое целое число при появлении прокручивается до
+// своего значения, как барабаны счётчика (data-count, motion.ts). Для
+// скринридера — значение целиком.
 interface Props {
   value: string;
 }
 const { value } = Astro.props;
-const [before, after] = value.split(" → ");
 
-/** Разбивает строку на первое целое число и остальное. Ноль, диапазоны
- *  («90–91») и дроби («6,7») не считаем: на полпути выходило бы «45–91»
- *  или «3,7». */
-const split = (text: string) => {
-  const match = text.match(/^(\D*?)(\d+)(.*)$/);
-  if (!match || match[2] === "0" || /^[–,.-]\d/.test(match[3]!)) return null;
-  return { head: match[1], number: match[2], tail: match[3] };
-};
-const plain = after ? null : split(value);
-const shrink = after ? split(after) : null;
+/** Первое целое число и то, что вокруг него. Ноль, диапазоны («90–91») и
+ *  дроби («6,7») не крутим: на полпути выходило бы «45–91» или «3,7». */
+const match = value.match(/^(\D*?)(\d+)(.*)$/);
+const parts = match && match[2] !== "0" && !/^[–,.-]\d/.test(match[3]!) ? { head: match[1], number: match[2], tail: match[3] } : null;
 ---
 
 {
-  after ? (
-    <>
-      <span aria-hidden="true" class="inline-flex items-center gap-[0.3em]">
-        {before}
-        <svg viewBox="0 0 24 24" class="size-[0.75em] text-muted" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 12h15M13 6l6 6-6 6" />
-        </svg>
-        {shrink ? (
-          <span>
-            {shrink.head}
-            <span data-count={shrink.number} data-count-from={before?.match(/\d+/)?.[0]}>
-              {shrink.number}
-            </span>
-            {shrink.tail}
-          </span>
-        ) : (
-          after
-        )}
-      </span>
-      <span class="sr-only">
-        было {before}, стало {after}
-      </span>
-    </>
-  ) : plain ? (
+  parts ? (
     <>
       <span aria-hidden="true">
-        {plain.head}
-        <span data-count={plain.number}>{plain.number}</span>
-        {plain.tail}
+        {parts.head}
+        <span data-count={parts.number}>{parts.number}</span>
+        {parts.tail}
       </span>
       <span class="sr-only">{value}</span>
     </>

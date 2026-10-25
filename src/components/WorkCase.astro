@@ -2,6 +2,7 @@
 import LiveWindow from "./LiveWindow.astro";
 import Icon from "./Icon.astro";
 import MetricValue from "./MetricValue.astro";
+import MetricCard from "./MetricCard.astro";
 import type { Work } from "../data/works";
 import { typo } from "../lib/typo";
 
@@ -15,9 +16,13 @@ const { work, index } = Astro.props;
 const flip = index % 2 === 1;
 const headingId = `work-${work.id}`;
 const phone = work.screens.mobile;
+// Карточки цифр идут по две в ряд, «было/стало» — во всю ширину. Если
+// обычных нечётное число, последняя тоже растягивается, чтобы не стоять одна.
+const plain = work.metrics.filter((metric) => metric.visual?.type !== "bars");
+const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
 ---
 
-<article aria-labelledby={headingId} class="grid gap-10 border-t border-line py-14 sm:py-20 lg:grid-cols-12 lg:items-start lg:gap-14" data-case>
+<article id={`case-${work.id}`} aria-labelledby={headingId} class="grid gap-10 border-t border-line py-14 sm:py-20 lg:grid-cols-12 lg:items-start lg:gap-14" data-case>
   {/* Текст кейса выше окна, поэтому на широком экране окно едет рядом с ним
       при прокрутке, а не висит посередине с пустотой сверху. Окно и телефон —
       одна группа: пауза в строке адреса останавливает обоих. */}
@@ -83,21 +88,33 @@ const phone = work.screens.mobile;
       )
     }
 
-    <p class="mt-5 leading-relaxed text-ink-2" data-fade set:html={typo(work.summary)} />
+    {/* Кейс читается как история: задача — результат — что сделано — цифры.
+        Результат для бизнеса — сразу под задачей, крупно: ради него сайт и
+        делали. */}
+    <h4 class="case-label" data-fade>Задача</h4>
+    <p class="mt-2 leading-relaxed text-ink-2" data-fade set:html={typo(work.task)} />
 
-    {/* Результат для бизнеса — сразу под описанием, крупно: ради него сайт и делали. */}
     {
       work.result && (
-        <div class="mt-5 rounded-xl border border-ok/25 bg-ok/10 px-4 py-3.5 sm:px-5" data-fade>
-          <p class="font-mono text-xl font-semibold tracking-tight text-ok-text sm:text-2xl">
-            <MetricValue value={work.result.value} />
-          </p>
-          <p class="mt-1 leading-relaxed text-ink-2" set:html={typo(work.result.text)} />
+        <div class="case-result on-dark" data-fade>
+          <h4 class="case-label case-label-dark">Результат</h4>
+          <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
+            {work.result.figures.map((figure) => (
+              <div class="flex flex-col gap-1.5">
+                <dt class="order-2 text-sm leading-snug text-muted-dark" set:html={typo(figure.label)} />
+                <dd class="order-1 font-mono text-[2rem] leading-none font-semibold tracking-tight whitespace-nowrap text-accent sm:text-[2.5rem]">
+                  <MetricValue value={figure.value} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p class="mt-4 border-t border-line-dark pt-4 text-[0.9375rem] leading-relaxed text-paper/85" set:html={typo(work.result.text)} />
         </div>
       )
     }
 
-    <ul class="mt-6 space-y-3" aria-label="Что сделано" data-stagger>
+    <h4 class="case-label" data-fade>Что сделал</h4>
+    <ul class="mt-3 space-y-3" data-stagger>
       {
         work.done.map((item) => (
           <li class="flex gap-3 leading-snug">
@@ -110,17 +127,9 @@ const phone = work.screens.mobile;
       }
     </ul>
 
-    <dl class="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-line pt-6 sm:grid-cols-3" data-stagger>
-      {
-        work.metrics.map((metric) => (
-          <div class="flex flex-col gap-1">
-            <dt class="order-2 text-[0.8125rem] leading-snug text-muted" set:html={typo(metric.label)} />
-            <dd class="order-1 font-mono text-xl font-semibold tracking-tight whitespace-nowrap">
-              <MetricValue value={metric.value} />
-            </dd>
-          </div>
-        ))
-      }
+    <h4 class="case-label" data-fade>В цифрах</h4>
+    <dl class="case-metrics mt-3" data-stagger>
+      {work.metrics.map((metric) => <MetricCard metric={metric} wide={metric === lone} />)}
     </dl>
 
     <ul class="mt-6 flex flex-wrap gap-1.5" aria-label="Технологии" data-stagger>

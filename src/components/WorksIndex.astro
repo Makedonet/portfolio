@@ -1,0 +1,259 @@
+---
+// Индекс работ под первым экраном: клиент, отрасль и главное, что дал сайт, —
+// по строке на работу. Строка ведёт к кейсу (его id — case-…, WorkCase.astro),
+// кейс коротко подсвечивается, когда до него доехали. При наведении мышью строка
+// заливается жёлтым, а за курсором плывёт превью сайта (scripts/works-index.ts):
+// пружина, наклон от скорости, смена картинки сдвигом. На телефоне превью
+// нет — миниатюра стоит прямо в строке.
+import { Picture, getImage } from "astro:assets";
+import Icon from "./Icon.astro";
+import { works } from "../data/works";
+import { scene } from "../data/live";
+import { typo } from "../lib/typo";
+
+const rows = await Promise.all(
+  works.map(async (work, i) => {
+    const poster = scene(work.screens.desktop[0]!).poster;
+    // Превью нужно только под курсором — адреса в data-атрибутах, грузит скрипт.
+    const avif = await getImage({ src: poster, widths: [400, 800], format: "avif", quality: 55 });
+    const webp = await getImage({ src: poster, widths: [400, 800], format: "webp", quality: 72 });
+    return { work, poster, avif: avif.srcSet.attribute, webp, n: String(i + 1).padStart(2, "0") };
+  }),
+);
+---
+
+<section aria-labelledby="index-title" class="works-index border-y border-line bg-surface" data-works-index>
+  <h2 id="index-title" class="sr-only">Работы коротко</h2>
+  {/* Подписи колонок — только глазу: в каждой строке и так всё сказано. */}
+  <div class="container-page" aria-hidden="true">
+    <div class="index-head">
+      <span>Проект</span>
+      <span>Отрасль</span>
+      <span>Главное</span>
+    </div>
+  </div>
+  <ol class="container-page" data-stagger>
+    {
+      rows.map(({ work, poster, n }, i) => (
+        <li class="index-row">
+          <a href={`#case-${work.id}`} class="index-link" data-index-row={i}>
+            <span class="index-fill" aria-hidden="true" />
+            <span class="index-num" aria-hidden="true">
+              {n}
+            </span>
+            <Picture
+              src={poster}
+              alt=""
+              widths={[176, 264]}
+              sizes="88px"
+              formats={["avif"]}
+              fallbackFormat="webp"
+              loading="lazy"
+              decoding="async"
+              class="index-thumb"
+            />
+            <span class="index-name" set:html={typo(work.title)} />
+            <span class="index-industry">{work.industry}</span>
+            <span class="index-result" set:html={typo(work.highlight)} />
+            <Icon name="arrow-down" class="index-arrow" />
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+  <div class="index-preview" aria-hidden="true" data-index-preview>
+    <div class="index-preview-track" data-index-track>
+      {
+        rows.map(({ avif, webp }) => (
+          <picture>
+            <source type="image/avif" data-srcset={avif} sizes="22rem" />
+            <img data-srcset={webp.srcSet.attribute} data-src={webp.src} sizes="22rem" alt="" width="400" height="250" decoding="async" data-index-image />
+          </picture>
+        ))
+      }
+    </div>
+    <span class="index-preview-label">Смотреть кейс</span>
+  </div>
+</section>
+
+<style>
+  .works-index {
+    position: relative;
+    overflow-x: clip;
+  }
+  .index-row + .index-row {
+    border-top: 1px solid var(--color-line);
+  }
+  /* Телефон: миниатюра слева, справа — номер с отраслью, название и итог. */
+  .index-link {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    grid-template-areas:
+      "thumb meta"
+      "thumb name"
+      "thumb result";
+    column-gap: 1rem;
+    align-items: center;
+    padding-block: 1.1rem;
+  }
+  .index-fill {
+    position: absolute;
+    inset: 0 calc(50% - 50vw);
+    z-index: -1;
+    background: var(--color-accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.55s var(--ease-out-expo);
+  }
+  .index-num {
+    grid-area: meta;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .index-thumb {
+    grid-area: thumb;
+    width: 5.5rem;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 0 1px rgb(17 17 16 / 0.1);
+  }
+  .index-name {
+    grid-area: name;
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .index-industry {
+    grid-area: meta;
+    margin-left: 2.25rem;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .index-result {
+    grid-area: result;
+    margin-top: 0.15rem;
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    color: var(--color-ink-2);
+  }
+  .index-link :global(.index-arrow) {
+    display: none;
+  }
+  .index-head {
+    display: none;
+  }
+
+  /* Широкий экран: строка-таблица, миниатюры нет — её место занимает превью. */
+  @media (min-width: 1024px) {
+    .index-link,
+    .index-head {
+      grid-template-columns: 2.75rem minmax(0, 1.25fr) minmax(0, 0.6fr) minmax(0, 1.45fr) 1.5rem;
+      column-gap: 1.5rem;
+    }
+    .index-link {
+      grid-template-areas: "num name industry result arrow";
+      padding-block: 1.5rem;
+    }
+    .index-head {
+      display: grid;
+      padding-block: 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--color-line);
+      font: 500 0.75rem/1.2 var(--font-mono);
+      color: var(--color-muted);
+    }
+    .index-head span:first-child {
+      grid-column: 2;
+    }
+    .index-num {
+      grid-area: num;
+    }
+    .index-thumb {
+      display: none;
+    }
+    .index-name {
+      font-size: clamp(1.375rem, 2.1vw, 1.875rem);
+      transition: translate 0.5s var(--ease-out-expo);
+    }
+    .index-industry {
+      grid-area: industry;
+      margin-left: 0;
+      font-size: 0.9375rem;
+    }
+    .index-result {
+      margin-top: 0;
+      font-size: 1rem;
+    }
+    .index-link :global(.index-arrow) {
+      grid-area: arrow;
+      display: block;
+      width: 1.25rem;
+      height: 1.25rem;
+      transition: translate 0.45s var(--ease-out-expo);
+    }
+    .index-link:hover .index-fill,
+    .index-link:focus-visible .index-fill {
+      transform: scaleY(1);
+    }
+    .index-link:hover .index-name {
+      translate: 0.6rem 0;
+    }
+    .index-link:hover :global(.index-arrow) {
+      translate: 0 0.25rem;
+    }
+    .index-link:hover .index-num,
+    .index-link:hover .index-industry {
+      color: var(--color-ink-2);
+    }
+  }
+
+  /* Превью за курсором — только с мышью и движением (класс ставит скрипт). */
+  .index-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 40;
+    width: 22rem;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: var(--color-ink);
+    box-shadow:
+      0 0 0 1px rgb(17 17 16 / 0.12),
+      0 1.5rem 3rem -1rem rgb(17 17 16 / 0.45);
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+  }
+  :global(.index-live) .index-preview {
+    visibility: visible;
+  }
+  .index-preview-track {
+    height: 100%;
+  }
+  .index-preview-track :global(picture),
+  .index-preview-track img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .index-preview-track img {
+    object-fit: cover;
+    object-position: top;
+  }
+  .index-preview-label {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font: 500 0.75rem/1.2 var(--font-mono);
+  }
+</style>

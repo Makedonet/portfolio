@@ -17,7 +17,9 @@ const whatsapp = contact("whatsapp");
 const max = contact("max");
 ---
 
-<section aria-labelledby="contact-title" id="contact" class="on-dark scroll-mt-16 bg-ink text-paper">
+<section aria-labelledby="contact-title" id="contact" class="on-dark relative isolate scroll-mt-16 overflow-clip bg-ink text-paper">
+  {/* Пятно света за курсором (motion.ts, global.css .contact-glow). */}
+  <div class="contact-glow" aria-hidden="true" data-contact-glow></div>
   <div class="container-page grid gap-14 py-20 sm:py-28 lg:grid-cols-12 lg:gap-10">
     <div class="lg:col-span-7">
       <h2 id="contact-title" class="text-4xl leading-[1.05] font-bold tracking-[-0.035em] text-balance sm:text-6xl" data-split>

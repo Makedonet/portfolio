@@ -1,22 +1,26 @@
 // Движение страницы на GSAP: появление при прокрутке, счётчики, линия этапов,
-// наклон и «магнит» при наведении, «живые окна».
+// наклон и «магнит» при наведении, «живые окна», индекс работ.
 // Первый экран анимирован на CSS (global.css): он должен ожить сразу при
 // первой отрисовке, не дожидаясь скрипта. Всё остальное — здесь.
 // Разметка размечает, что анимировать, data-атрибутами:
 //   data-split — заголовок проявляется по словам;
 //   data-fade — блок всплывает; data-stagger — дети всплывают по очереди;
-//   data-count — число досчитывает до своего значения (data-count-from — откуда);
+//   data-count — число прокручивается до своего значения, как барабаны счётчика;
+//   .ring-value и .metric-bars — кольца оценок и полосы «было/стало» в кейсах;
 //   data-draw — линия галочки прорисовывается;
 //   data-tilt + data-depth — наклон и глубина слоёв под курсором;
-//   .btn и data-magnetic — кнопка тянется за курсором;
+//   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
 //   data-process — линия этапов и шаги;
 //   data-progress — полоса прочитанного в шапке;
 //   data-marquee — ленты крест-накрест, разгоняются от прокрутки;
 //   data-manifesto — абзац проявляется по словам вслед за прокруткой;
 //   data-services — лента услуг едет вбок, пока секция закреплена;
+//   .service — карточка услуги наклоняется к курсору, по ней бежит блик;
+//   data-contact-glow — пятно света за курсором в контактах;
 //   data-footer-name — имя в подвале, буквы набирают вес у курсора.
-// Визитка первого экрана, наклейки и подсказка у курсора — в своих модулях
-// (badge, stickers, cursor). Запускает всё boot.ts — после загрузки страницы.
+// Визитка первого экрана, наклейки, подсказка у курсора и индекс работ —
+// в своих модулях (badge, stickers, cursor, works-index). Запускает всё
+// boot.ts — после загрузки страницы.
 // «Уменьшить движение» — ничего из этого: страница видна как есть.
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -25,6 +29,7 @@ import { initLiveWindows } from "./live";
 import { initBadge } from "./badge";
 import { initStickers } from "./stickers";
 import { initCursor } from "./cursor";
+import { initWorksIndex } from "./works-index";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -42,7 +47,9 @@ const yieldToMain = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
  */
 function measureOnScreen(): Set<Element> {
   const seen = new Set<Element>();
-  const candidates = all("[data-split], [data-fade], [data-stagger] > *, [data-count], [data-draw], [data-case-visual], [data-case-phone]");
+  const candidates = all(
+    "[data-split], [data-fade], [data-stagger] > *, [data-count], [data-draw], [data-case-visual], [data-case-phone], .ring-value, .metric-bars",
+  );
   const rects = candidates.map((el) => el.getBoundingClientRect());
   candidates.forEach((el, i) => {
     const r = rects[i]!;
@@ -73,24 +80,49 @@ function headings(onScreen: Set<Element>): Array<() => void> {
     });
 }
 
-function fades(onScreen: Set<Element>) {
+/**
+ * Вызывает fn, когда элементы входят в экран — верх элемента поднимается выше
+ * линии start (в процентах высоты экрана сверху). Для каждого элемента один
+ * раз; вошедшие в одном кадре приходят одной пачкой — их удобно пускать по
+ * очереди. IntersectionObserver, а не ScrollTrigger на каждый элемент:
+ * триггер при создании читает раскладку, и сотня триггеров появления на
+ * медленном телефоне занимала поток одной задачей на 130 мс.
+ */
+function whenVisible(elements: Element[], fn: (batch: HTMLElement[]) => void, start = 92): () => void {
+  if (!elements.length) return () => {};
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const batch = entries.filter((entry) => entry.isIntersecting).map((entry) => entry.target as HTMLElement);
+      batch.forEach((el) => observer.unobserve(el));
+      if (batch.length) fn(batch);
+    },
+    { rootMargin: `0px 0px -${100 - start}% 0px` },
+  );
+  elements.forEach((el) => observer.observe(el));
+  return () => observer.disconnect();
+}
+
+function fades(onScreen: Set<Element>): () => void {
   // Только opacity, не autoAlpha: visibility: hidden убрала бы ссылки и
   // кнопки ещё не проявленных блоков из порядка Tab.
+  // Начальное положение — прямо в style, не через gsap.set: set перед записью
+  // читает текущее значение, и чтение после записи пересчитывало стили всей
+  // страницы на каждом из сотни блоков.
   const singles = all("[data-fade]").filter((el) => !onScreen.has(el));
-  gsap.set(singles, { opacity: 0, y: 36 });
-  ScrollTrigger.batch(singles, {
-    start: "top 90%",
-    once: true,
-    onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, overwrite: true }),
-  });
-
   const items = all("[data-stagger] > *").filter((el) => !onScreen.has(el));
-  gsap.set(items, { opacity: 0, y: 24 });
-  ScrollTrigger.batch(items, {
-    start: "top 92%",
-    once: true,
-    onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", stagger: 0.07, overwrite: true }),
-  });
+  const hide = (els: HTMLElement[], y: number) =>
+    els.forEach((el) => {
+      el.style.opacity = "0";
+      el.style.transform = `translate(0px, ${y}px)`;
+    });
+  hide(singles, 36);
+  hide(items, 24);
+  // overwrite: "auto", а не true: true снял бы и чужие твины тех же
+  // элементов — наклон карточек услуг (quickTo) после появления замер бы.
+  const stops = [
+    whenVisible(singles, (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, overwrite: "auto" }), 90),
+    whenVisible(items, (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", stagger: 0.07, overwrite: "auto" })),
+  ];
 
   // Фокус с клавиатуры на ещё не проявленном блоке — проявить сразу, чтобы
   // кольцо фокуса не оказалось на прозрачном элементе.
@@ -100,47 +132,116 @@ function fades(onScreen: Set<Element>) {
     while (el && !hidden.has(el)) el = el.parentElement;
     if (!el) return;
     hidden.delete(el);
-    gsap.to(el, { opacity: 1, y: 0, duration: 0.25, overwrite: true });
+    gsap.to(el, { opacity: 1, y: 0, duration: 0.25, overwrite: "auto" });
   };
   document.addEventListener("focusin", reveal);
-  return () => document.removeEventListener("focusin", reveal);
+  return () => {
+    stops.forEach((stop) => stop());
+    document.removeEventListener("focusin", reveal);
+    gsap.set([...singles, ...items], { clearProps: "opacity,transform" });
+  };
 }
 
-function counters(onScreen: Set<Element>) {
-  all("[data-count]")
-    .filter((el) => !onScreen.has(el))
-    .forEach((el) => {
-      const to = Number(el.dataset.count);
-      const from = Number(el.dataset.countFrom ?? 0);
-      const value = { n: from };
-      el.textContent = String(from);
-      gsap.to(value, {
-        n: to,
-        duration: Math.abs(to - from) > 100 ? 1.6 : 1.2,
-        ease: "power2.out",
-        onUpdate: () => {
-          el.textContent = String(Math.round(value.n));
-        },
-        scrollTrigger: { trigger: el, start: "top 92%", once: true },
-      });
+/** Числа прокручиваются до своего значения, как барабаны счётчика: у каждой
+ *  цифры своя лента 0–9, младшие разряды делают лишние обороты и встают
+ *  последними. Невидимая цифра в разряде держит ширину и базовую линию,
+ *  лента лежит поверх неё. Число — внутри aria-hidden, рядом есть текст
+ *  для скринридера (MetricValue.astro). Отмена возвращает обычный текст. */
+function odometers(onScreen: Set<Element>): () => void {
+  const numbers = all("[data-count]").filter((el) => !onScreen.has(el));
+  numbers.forEach((el) => {
+    const digits = [...(el.dataset.count ?? "")];
+    el.innerHTML = digits
+      .map((digit, i) => {
+        const loops = Math.min(2, i + (i === digits.length - 1 ? 1 : 0));
+        const cells = Array.from({ length: loops * 10 + Number(digit) + 1 }, (_, n) => `<span>${n % 10}</span>`).join("");
+        return `<span class="odo-d"><span class="odo-ghost">${digit}</span><span class="odo-s">${cells}</span></span>`;
+      })
+      .join("");
+  });
+  const stop = whenVisible(numbers, (batch) =>
+    batch.forEach((el) =>
+      all(".odo-s", el).forEach((strip, i) => {
+        const n = strip.childElementCount;
+        gsap.to(strip, { yPercent: (-100 * (n - 1)) / n, duration: 1.4 + i * 0.15, ease: "expo.out", delay: 0.1 });
+      }),
+    ),
+  );
+  return () => {
+    stop();
+    numbers.forEach((el) => (el.textContent = el.dataset.count ?? ""));
+  };
+}
+
+/** Кольца оценок дорисовываются до своей доли. В «было/стало» обе полосы
+ *  вырастают, затем «стало» сжимается до новой длины, а число рядом с ней
+ *  убывает вместе с полосой. */
+function gauges(onScreen: Set<Element>): () => void {
+  const rings = all<SVGCircleElement>(".ring-value").filter((ring) => !onScreen.has(ring));
+  gsap.set(rings, { strokeDashoffset: (_i: number, ring: SVGCircleElement) => Number(ring.dataset.ringLength) });
+
+  const timelines = new Map<Element, gsap.core.Timeline>();
+  all(".metric-bars")
+    .filter((bars) => !onScreen.has(bars))
+    .forEach((bars) => {
+      const after = bars.querySelector<HTMLElement>("[data-bar]");
+      if (!after) return;
+      const figure = bars.querySelector<HTMLElement>("[data-bar-from]");
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(all(".bar-fill", bars), { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power3.out", stagger: 0.08 });
+      tl.to(after, { scaleX: Number(after.dataset.bar), duration: 1.3, ease: "expo.inOut" }, "+=0.2");
+      if (figure) {
+        const value = { n: Number(figure.dataset.barFrom) };
+        figure.textContent = String(value.n);
+        tl.to(
+          value,
+          {
+            n: Number(figure.dataset.barTo),
+            duration: 1.3,
+            ease: "expo.inOut",
+            onUpdate: () => {
+              figure.textContent = String(Math.round(value.n));
+            },
+          },
+          "<",
+        );
+      }
+      timelines.set(bars, tl);
     });
+
+  const stops = [
+    whenVisible(rings, (batch) =>
+      gsap.to(batch, {
+        strokeDashoffset: (_i: number, ring: SVGCircleElement) => Number(ring.dataset.ring),
+        duration: 1.6,
+        ease: "expo.out",
+        delay: 0.1,
+      }),
+    ),
+    whenVisible([...timelines.keys()], (batch) => batch.forEach((bars) => timelines.get(bars)?.play())),
+  ];
+  return () => stops.forEach((stop) => stop());
 }
 
-function checkmarks(onScreen: Set<Element>) {
-  const paths = all("[data-draw]")
-    .filter((el) => !onScreen.has(el))
-    .flatMap((el) => all<SVGPathElement>("path", el));
+/** Галочки прорисовываются, когда их пункт появляется, — по очереди, как
+ *  всплывают сами пункты. */
+function checkmarks(onScreen: Set<Element>): () => void {
+  const marks = all("[data-draw]").filter((el) => !onScreen.has(el));
+  const paths = marks.flatMap((el) => all<SVGPathElement>("path", el));
+  // Сначала все длины, потом запись — по той же причине, что в fades().
   const lengths = paths.map((path) => path.getTotalLength());
   paths.forEach((path, i) => {
-    gsap.set(path, { strokeDasharray: lengths[i], strokeDashoffset: lengths[i] });
-    gsap.to(path, {
-      strokeDashoffset: 0,
-      duration: 0.6,
-      ease: "power2.out",
-      delay: 0.15,
-      scrollTrigger: { trigger: path.closest("li") ?? path, start: "top 92%", once: true },
-    });
+    path.style.strokeDasharray = `${lengths[i]}`;
+    path.style.strokeDashoffset = `${lengths[i]}`;
   });
+  const stop = whenVisible(
+    marks.map((el) => el.closest("li") ?? el),
+    (batch) => gsap.to(batch.flatMap((item) => all("[data-draw] path", item)), { strokeDashoffset: 0, duration: 0.6, ease: "power2.out", delay: 0.15, stagger: 0.07 }),
+  );
+  return () => {
+    stop();
+    gsap.set(paths, { clearProps: "strokeDasharray,strokeDashoffset" });
+  };
 }
 
 /** Кейсы — тоже по одному на задачу. */
@@ -279,29 +380,34 @@ function marquee(): () => void {
 
 /** Абзац подхода: слова заливаются по очереди из контура, маркер
  *  дорисовывается. Контур — того же цвета, что текст: непрочитанное слово
- *  остаётся контрастным и читаемым. */
-function manifesto() {
+ *  остаётся контрастным и читаемым. Разбивка, заливка и каждый маркер —
+ *  отдельными задачами: вместе они занимали поток на 100 мс на медленном
+ *  телефоне. autoSplit не нужен: разбивка только на слова от ширины не
+ *  зависит. */
+function manifesto(): Array<() => void> {
   const el = document.querySelector<HTMLElement>("[data-manifesto]");
-  if (!el) return;
-  SplitText.create(el, {
-    type: "words",
-    wordsClass: "manifesto-word",
-    // Для скринридера рядом есть обычный текст, разбивка спрятана целиком.
-    aria: "none",
-    autoSplit: true,
-    onSplit: (self) =>
-      gsap.fromTo(
-        self.words,
-        { color: "rgb(17 17 16 / 0)" },
-        {
-          color: "rgb(17 17 16 / 1)",
-          ease: "none",
-          stagger: 0.1,
-          scrollTrigger: { trigger: el, start: "top 82%", end: "bottom 48%", scrub: 0.5 },
-        },
-      ),
-  });
-  all("[data-manifesto-mark]", el).forEach((mark) => {
+  if (!el) return [];
+  let words: Element[] = [];
+  // Для скринридера рядом есть обычный текст, разбивка спрятана целиком.
+  const split = () => {
+    words = SplitText.create(el, { type: "words", wordsClass: "manifesto-word", aria: "none" }).words;
+  };
+  const fill = () => {
+    gsap.fromTo(
+      words,
+      { color: "rgb(17 17 16 / 0)" },
+      {
+        color: "rgb(17 17 16 / 1)",
+        ease: "none",
+        stagger: 0.1,
+        scrollTrigger: { trigger: el, start: "top 82%", end: "bottom 48%", scrub: 0.5 },
+      },
+    );
+  };
+  // Маркер ищем в момент задачи: разбивка на слова перестраивает абзац.
+  const marks = [...el.querySelectorAll("[data-manifesto-mark]")].map((_, i) => () => {
+    const mark = all("[data-manifesto-mark]", el)[i];
+    if (!mark) return;
     gsap.fromTo(
       mark,
       { backgroundSize: "0% 0.42em" },
@@ -312,6 +418,7 @@ function manifesto() {
       },
     );
   });
+  return [split, fill, ...marks];
 }
 
 /** Услуги: на широком экране секция закреплена, лента карточек едет вбок. */
@@ -415,8 +522,51 @@ function header() {
   });
 }
 
+/** Текст кнопки при наведении перекатывается: буквы по очереди уезжают
+ *  вверх, снизу на их место въезжает копия (global.css, .roll). Буквы
+ *  скрыты от скринридера, рядом — тот же текст целиком. */
+function rollText(btn: HTMLElement): () => void {
+  // Текст прямо в кнопке и в её простых <span> (в шапке номер и «Позвонить»
+  // лежат в своих span для разной ширины экрана).
+  const nodes = [...btn.childNodes].flatMap((node) => {
+    if (node instanceof Text) return node.data.trim() ? [node] : [];
+    if (node instanceof HTMLSpanElement && !node.classList.contains("sr-only") && node.childNodes.length === 1 && node.firstChild instanceof Text)
+      return [node.firstChild];
+    return [];
+  });
+  const restores = nodes.map((node) => {
+    const text = node.data.trim();
+    const line = () => {
+      const el = document.createElement("span");
+      [...text].forEach((char, i) => {
+        if (char === " ") return el.append(" ");
+        const letter = document.createElement("span");
+        letter.textContent = char;
+        letter.style.setProperty("--i", String(i));
+        el.append(letter);
+      });
+      return el;
+    };
+    const roll = document.createElement("span");
+    roll.className = "roll";
+    roll.setAttribute("aria-hidden", "true");
+    roll.append(line(), line());
+    const label = document.createElement("span");
+    label.className = "sr-only";
+    label.textContent = text;
+    node.replaceWith(roll, label);
+    return () => {
+      roll.replaceWith(node);
+      label.remove();
+    };
+  });
+  return () => restores.forEach((fn) => fn());
+}
+
 function hover(): () => void {
   const cleanups: Array<() => void> = [];
+
+  all(".btn").forEach((btn) => cleanups.push(rollText(btn)));
 
   // Кнопки тянутся за курсором и пружиной возвращаются на место.
   all(".btn, [data-magnetic]").forEach((el) => {
@@ -479,6 +629,70 @@ function hover(): () => void {
     });
   });
 
+  // Карточки услуг наклоняются к курсору, по ним бежит блик (--gx/--gy,
+  // global.css). Наклон — на самой карточке: появление при прокрутке
+  // двигает её y, а не поворот, и твины друг другу не мешают.
+  all(".service").forEach((card) => {
+    gsap.set(card, { transformPerspective: 900 });
+    const rx = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power3.out" });
+    const ry = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power3.out" });
+    const move = (e: PointerEvent) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      ry((px - 0.5) * 9);
+      rx((0.5 - py) * 9);
+      card.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
+      card.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
+    };
+    const leave = () => {
+      rx(0);
+      ry(0);
+    };
+    card.addEventListener("pointermove", move);
+    card.addEventListener("pointerleave", leave);
+    cleanups.push(() => {
+      card.removeEventListener("pointermove", move);
+      card.removeEventListener("pointerleave", leave);
+      card.style.removeProperty("--gx");
+      card.style.removeProperty("--gy");
+    });
+  });
+
+  // Контакты: за курсором по тёмному блоку плывёт мягкое жёлтое пятно.
+  // Прокрутка уносит блок из-под неподвижной мыши — пятно догоняет.
+  const contact = document.querySelector<HTMLElement>("#contact");
+  const glow = contact?.querySelector<HTMLElement>("[data-contact-glow]");
+  if (contact && glow) {
+    const gx = gsap.quickTo(glow, "x", { duration: 0.9, ease: "power3.out" });
+    const gy = gsap.quickTo(glow, "y", { duration: 0.9, ease: "power3.out" });
+    let pointer: { x: number; y: number } | null = null;
+    const follow = () => {
+      if (!pointer) return;
+      const r = contact.getBoundingClientRect();
+      gx(pointer.x - r.left);
+      gy(pointer.y - r.top);
+    };
+    const move = (e: PointerEvent) => {
+      if (!pointer) glow.classList.add("is-on");
+      pointer = { x: e.clientX, y: e.clientY };
+      follow();
+    };
+    const leave = () => {
+      pointer = null;
+      glow.classList.remove("is-on");
+    };
+    contact.addEventListener("pointermove", move);
+    contact.addEventListener("pointerleave", leave);
+    addEventListener("scroll", follow, { passive: true });
+    cleanups.push(() => {
+      contact.removeEventListener("pointermove", move);
+      contact.removeEventListener("pointerleave", leave);
+      removeEventListener("scroll", follow);
+      glow.classList.remove("is-on");
+    });
+  }
+
   return () => cleanups.forEach((fn) => fn());
 }
 
@@ -500,14 +714,7 @@ export function init() {
       // Класс включает то, что имеет смысл только при движении (кнопки паузы окон).
       document.documentElement.classList.add("motion-on");
 
-      let stopLive = () => {};
-      let stopHover = () => {};
-      let stopFades = () => {};
-      let stopBadge = () => {};
-      let stopStickers = () => {};
-      let stopCursor = () => {};
-      let stopMarquee = () => {};
-      let stopFooter = () => {};
+      const stops: Array<() => void> = [];
       let cancelled = false;
 
       // Настройка мелкими задачами с передышками: каждая короче 50 мс даже на
@@ -518,11 +725,8 @@ export function init() {
         const tasks: Array<() => void> = [
           // Визитка — первым делом: она на первом экране и ждёт рук.
           () => {
-            if (badge) {
-              stopBadge = initBadge(badge, true, fine);
-              stopStickers = initStickers(badge.closest("section") ?? badge);
-            }
-            if (fine) stopCursor = initCursor();
+            if (badge) stops.push(initBadge(badge, true, fine), initStickers(badge.closest("section") ?? badge));
+            if (fine) stops.push(initCursor());
           },
           // Закреплённая лента услуг добавляет странице высоты — она раньше
           // всех триггеров ниже неё, тогда они сразу считаются с её учётом.
@@ -531,26 +735,25 @@ export function init() {
             header();
             progress();
           },
+          () => stops.push(fades(onScreen)),
           () => {
-            stopFades = fades(onScreen);
+            const index = document.querySelector<HTMLElement>("[data-works-index]");
+            if (index) stops.push(initWorksIndex(index, fine));
           },
-          () => counters(onScreen),
-          () => checkmarks(onScreen),
+          () => stops.push(odometers(onScreen)),
+          () => stops.push(gauges(onScreen)),
+          () => stops.push(checkmarks(onScreen)),
           ...headings(onScreen),
-          manifesto,
+          ...manifesto(),
           ...cases(onScreen),
           processLine,
           contactReveal,
           () => {
-            stopLive = initLiveWindows(fine);
-            if (fine) stopHover = hover();
+            stops.push(initLiveWindows(fine));
+            if (fine) stops.push(hover());
           },
-          () => {
-            stopMarquee = marquee();
-          },
-          () => {
-            stopFooter = footerName(fine);
-          },
+          () => stops.push(marquee()),
+          () => stops.push(footerName(fine)),
         ];
         for (const task of tasks) {
           if (cancelled) return;
@@ -561,14 +764,7 @@ export function init() {
 
       return () => {
         cancelled = true;
-        stopFades();
-        stopLive();
-        stopHover();
-        stopBadge();
-        stopStickers();
-        stopCursor();
-        stopMarquee();
-        stopFooter();
+        stops.forEach((stop) => stop());
         document.documentElement.classList.remove("motion-on");
       };
     },

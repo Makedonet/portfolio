@@ -224,6 +224,34 @@
     border-color: var(--color-paper);
   }
 
+  /* Текст кнопки перекатывается при наведении (motion.ts): две строки букв
+     в одной ячейке — верхняя по букве уезжает вверх, нижняя въезжает на её
+     место. Поля сверху и снизу — чтобы обрезка не задевала хвосты букв. */
+  .roll {
+    display: inline-grid;
+    overflow: hidden;
+    padding-block: 0.15em;
+    margin-block: -0.15em;
+  }
+  .roll > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+  .roll > span > span {
+    display: inline-block;
+    transition: translate 0.5s var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 12ms);
+  }
+  .roll > span + span > span {
+    translate: 0 130%;
+  }
+  .btn:hover .roll > span:first-child > span {
+    translate: 0 -130%;
+  }
+  .btn:hover .roll > span + span > span {
+    translate: 0 0;
+  }
+
   /* Текстовые ссылки со стрелкой: линия под текстом заполняется слева. */
   .link-line {
     background-image: linear-gradient(currentColor, currentColor), linear-gradient(rgb(17 17 16 / 0.2), rgb(17 17 16 / 0.2));
@@ -263,30 +291,178 @@
     translate: 0 -2px;
   }
 
-  /* Ячейки цифр: акцентная черта снизу растёт при наведении. */
-  .fact {
-    position: relative;
+  /* Кейс: подписи частей истории — задача, результат, что сделано, цифры. */
+  .case-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 2rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-ink);
   }
-  .fact::after {
+  .case-label::before {
     content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
+    width: 1.1rem;
     height: 3px;
+    border-radius: 3px;
     background: var(--color-accent);
-    transform: scaleX(0);
+  }
+  .case-label-dark {
+    margin-top: 0;
+    color: var(--color-paper);
+  }
+  /* Результат для бизнеса — тёмная карточка с жёлтыми цифрами. */
+  .case-result {
+    margin-top: 1.25rem;
+    padding: 1.25rem 1.25rem 1.1rem;
+    border-radius: 1rem;
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  @media (min-width: 640px) {
+    .case-result {
+      padding: 1.5rem 1.6rem 1.35rem;
+    }
+  }
+
+  /* Цифры кейса — карточки в две колонки; .metric-wide — во всю ширину
+     (какие — решает WorkCase.astro). */
+  .case-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.95rem 1rem 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.875rem;
+    background: var(--color-surface);
+  }
+  .metric-wide {
+    grid-column: 1 / -1;
+  }
+  .metric-label {
+    order: 2;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-muted);
+  }
+  .metric-body {
+    order: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .metric-value {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .metric-ring {
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+  }
+  .ring-track,
+  .ring-value {
+    fill: none;
+    stroke-width: 4.5;
+  }
+  .ring-track {
+    stroke: rgb(31 157 85 / 0.16);
+  }
+  .ring-value {
+    stroke: var(--color-ok);
+    stroke-linecap: round;
+  }
+  .metric-bars {
+    display: grid;
+    gap: 0.4rem;
+    width: 100%;
+    margin-top: 0.15rem;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 4.25rem;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .bar-figure {
+    font-family: var(--font-mono);
+    color: var(--color-ink-2);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .bar {
+    height: 0.6rem;
+    border-radius: 1rem;
+    background: rgb(17 17 16 / 0.06);
+    overflow: hidden;
+  }
+  .bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
     transform-origin: left;
-    transition: transform 0.5s var(--ease-out-expo);
   }
-  .fact:hover::after {
-    transform: scaleX(1);
+  .bar-before {
+    background: rgb(17 17 16 / 0.28);
   }
-  .fact dd {
-    transition: translate 0.4s var(--ease-out-expo);
+  .bar-after {
+    background: var(--color-ok);
   }
-  .fact:hover dd {
-    translate: 0.35rem 0;
+
+  /* Одометр (motion.ts): в разряде невидимая цифра держит ширину и базовую
+     линию, поверх неё — лента 0–9, сдвинутая до нужной цифры. Обрезка —
+     clip-path, а не overflow: с overflow базовой линией разряда стал бы его
+     нижний край, и цифры встали бы выше соседнего текста. */
+  .odo-d {
+    position: relative;
+    display: inline-block;
+    clip-path: inset(0);
+  }
+  .odo-ghost {
+    visibility: hidden;
+  }
+  .odo-s {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .odo-s > span {
+    display: block;
+    text-align: center;
+  }
+
+  /* Пришли к кейсу из индекса работ — окно кейса коротко подсвечивается. */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-case].is-arrived [data-case-visual] {
+      animation: case-arrive 1.6s var(--ease-out) both;
+    }
+  }
+  @keyframes case-arrive {
+    0% {
+      box-shadow: 0 0 0 0 rgb(255 212 59 / 0);
+    }
+    25% {
+      box-shadow: 0 0 0 6px rgb(255 212 59 / 0.9);
+    }
+    100% {
+      box-shadow: 0 0 0 16px rgb(255 212 59 / 0);
+    }
+  }
+  [data-case-visual] {
+    border-radius: 0.75rem;
   }
 
   /* Услуги: сетка карточек, на широком экране при движении — лента вбок
@@ -362,6 +538,23 @@
   .service:hover::before {
     transform: scaleY(1);
   }
+  /* Блик под курсором: точку ставит motion.ts (--gx/--gy), он же наклоняет
+     карточку. */
+  @media (hover: hover) {
+    .service::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: radial-gradient(circle 11rem at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / 0.6), transparent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s var(--ease-out);
+    }
+    .service:hover::after {
+      opacity: 1;
+    }
+  }
   .service:hover {
     border-color: var(--color-accent);
   }
@@ -404,6 +597,26 @@
      (заливку ведёт motion.ts). */
   .manifesto-word {
     -webkit-text-stroke: 1.25px var(--color-ink);
+  }
+
+  /* Контакты: мягкое жёлтое пятно за курсором (motion.ts двигает его и
+     включает). Под текстом: блок изолирован, пятно в нём — на z-index -1. */
+  .contact-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 48rem;
+    height: 48rem;
+    margin: -24rem 0 0 -24rem;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(255 212 59 / 0.2), rgb(255 212 59 / 0.07) 50%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s var(--ease-out);
+  }
+  .contact-glow.is-on {
+    opacity: 1;
   }
 
   /* Имя в подвале: во всю ширину, насыщенность каждой буквы — --w
