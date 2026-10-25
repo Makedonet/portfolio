@@ -193,17 +193,15 @@ export function initLiveWindows(fine: boolean): () => void {
 
     if (fine) {
       // Колёсико листает кадр показанной страницы. Цель — в процентах высоты
-      // кадра, как и у таймлайна; плавность — от quickTo.
+      // кадра, как и у таймлайна. Каждое движение колёсика — новый короткий
+      // твин вместо прежнего: остановленный твин, переиспользованный при
+      // следующем наведении, кадр уже не двигал — окно «замерзало».
       let goal = 0;
       let lastWheel = -Infinity;
-      const movers = new Map<Scene, ReturnType<typeof gsap.quickTo>>();
-      const mover = (scene: Scene) => {
-        let fn = movers.get(scene);
-        if (!fn) {
-          fn = gsap.quickTo(scene.page, "yPercent", { duration: 0.45, ease: "power3.out" });
-          movers.set(scene, fn);
-        }
-        return fn;
+      let glide: gsap.core.Tween | null = null;
+      const moveTo = (scene: Scene, y: number) => {
+        glide?.kill();
+        glide = gsap.to(scene.page, { yPercent: y, duration: 0.45, ease: "power3.out" });
       };
 
       const wheel = (event: WheelEvent) => {
@@ -221,7 +219,6 @@ export function initLiveWindows(fine: boolean): () => void {
             scene = scenes[shownScene]!;
           }
           goal = Number(gsap.getProperty(scene.page, "yPercent"));
-          mover(scene)(goal, goal);
         }
         const height = scene.page.offsetHeight || 1;
         const delta = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaMode === 2 ? event.deltaY * screen.clientHeight : event.deltaY;
@@ -231,7 +228,7 @@ export function initLiveWindows(fine: boolean): () => void {
         event.preventDefault();
         lastWheel = event.timeStamp;
         goal = next;
-        mover(scene)(goal);
+        moveTo(scene, goal);
         if (scene.header) gsap.to(scene.header, { autoAlpha: goal < -0.3 ? 1 : 0, duration: 0.2 });
       };
 
@@ -243,7 +240,8 @@ export function initLiveWindows(fine: boolean): () => void {
         const at = Number(gsap.getProperty(scene.page, "yPercent"));
         const options = holds.filter((h) => h.scene === shownScene);
         const nearest = options.reduce((a, b) => (Math.abs(b.y - at) < Math.abs(a.y - at) ? b : a), options[0]!);
-        movers.get(scene)?.tween.kill();
+        glide?.kill();
+        glide = null;
         if (scene.header) gsap.to(scene.header, { autoAlpha: nearest.y < 0 ? 1 : 0, duration: 0.2 });
         settle = gsap.to(scene.page, {
           yPercent: nearest.y,
@@ -274,6 +272,7 @@ export function initLiveWindows(fine: boolean): () => void {
         screen.removeEventListener("pointerleave", leave);
         screen.removeEventListener("wheel", wheel);
         settle?.kill();
+        glide?.kill();
       });
     }
 

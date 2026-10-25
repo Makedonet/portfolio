@@ -58,9 +58,12 @@ const phone = work.screens.mobile;
   </div>
 
   <div class:list={["lg:col-span-5", flip && "lg:order-1"]}>
-    <h3 id={headingId} class="text-3xl leading-tight font-bold tracking-[-0.025em] text-balance sm:text-[2.125rem]" data-split>
-      {work.title}
-    </h3>
+    <h3
+      id={headingId}
+      class="text-3xl leading-tight font-bold tracking-[-0.025em] text-balance sm:text-[2.125rem]"
+      data-split
+      set:html={typo(work.title)}
+    />
     <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" data-fade>
       <p class="text-muted" set:html={typo(work.kind)} />
       <span

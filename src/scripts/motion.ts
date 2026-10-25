@@ -441,7 +441,10 @@ function hover(): () => void {
   all("[data-tilt]").forEach((el) => {
     const strength = Number(el.dataset.tilt || 6);
     const target = el.querySelector<HTMLElement>("[data-tilt-target]") ?? el;
-    gsap.set(target, { transformPerspective: 1200, transformStyle: "preserve-3d" });
+    // Плоский, а не preserve-3d: в общем 3D-контексте окно и телефон делили
+    // одну плоскость, и браузер то и дело считал верхним окно — колёсико над
+    // телефоном листало окно под ним.
+    gsap.set(target, { transformPerspective: 1200 });
     const rx = gsap.quickTo(target, "rotationX", { duration: 0.6, ease: "power3.out" });
     const ry = gsap.quickTo(target, "rotationY", { duration: 0.6, ease: "power3.out" });
     const layers = all("[data-depth]", el).map((layer) => ({

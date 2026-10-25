@@ -230,8 +230,22 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
   let awake = false;
   let visible = false;
   let quiet = 0;
+  let lastScroll = scrollY;
+  let scrollSpeed = 0;
+  /** Толчок от ускорения прокрутки: вниз — вправо, вверх — влево. Сильно
+   *  отклонённую визитку больше не толкаем. */
+  const inertia = () => {
+    const speed = scrollY - lastScroll;
+    lastScroll = scrollY;
+    const push = gsap.utils.clamp(-2.5, 2.5, (speed - scrollSpeed) * 0.05);
+    scrollSpeed = speed;
+    if (held || Math.abs(angle()) > 0.45) return;
+    bottom.x += push;
+  };
+
   const tick = (_time: number, deltaMs: number) => {
     const dt = Math.min(deltaMs, 50) / 1000;
+    inertia();
     for (let s = 0; s < SUBSTEPS; s++) step(dt / SUBSTEPS);
     spin(dt);
     const ease = 1 - Math.exp(-dt * 9);
@@ -242,7 +256,16 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
     let energy = 0;
     for (const p of [...pts, bottom]) energy += Math.abs(p.x - p.px) + Math.abs(p.y - p.py);
     const still =
-      !held && !press && !hover && !freeSpin && !dots && energy < 0.02 && Math.abs(target - phi) < 0.05 && Math.abs(omega) < 0.05 && Math.abs(tiltX) + Math.abs(tiltY) < 0.02;
+      !held &&
+      !press &&
+      !hover &&
+      !freeSpin &&
+      !dots &&
+      scrollSpeed === 0 &&
+      energy < 0.02 &&
+      Math.abs(target - phi) < 0.05 &&
+      Math.abs(omega) < 0.05 &&
+      Math.abs(tiltX) + Math.abs(tiltY) < 0.02;
     quiet = still ? quiet + 1 : 0;
     if (quiet > 20) sleep();
   };
@@ -396,19 +419,16 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
 
   listen(button, "click", () => flip(1));
 
-  // Прокрутка страницы раскачивает визитку: вниз — вправо, вверх — влево
-  // и чуть подбрасывает.
-  let lastScroll = scrollY;
+  // Прокрутка страницы раскачивает визитку по инерции — от ускорения, а не
+  // от каждого пикселя: ровная прокрутка её не трогает, толчок при старте и
+  // остановке — качает. Иначе плавная прокрутка к разделу по пункту меню
+  // раскачивала визитку почти до горизонтали. Слушатель только будит расчёт,
+  // скорость считается в кадре (inertia ниже).
   listen(
     window,
     "scroll",
     () => {
-      const delta = gsap.utils.clamp(-60, 60, scrollY - lastScroll);
-      lastScroll = scrollY;
-      if (!visible || held) return;
-      bottom.x += delta * 0.045;
-      if (delta < 0) for (const p of [...pts, bottom]) if (p.w) p.y += delta * 0.02;
-      wake();
+      if (visible && !held) wake();
     },
     { passive: true },
   );
