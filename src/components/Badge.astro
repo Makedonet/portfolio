@@ -112,7 +112,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
                 height={face.height}
                 alt=""
                 decoding="async"
-                data-badge-deferred
+                data-badge-deferred="hover"
               />
             </picture>
           </div>
@@ -270,7 +270,9 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     transform-origin: 50% -0.9em;
     pointer-events: auto;
     touch-action: pan-y;
-    z-index: 2;
+    /* Выше текста первого экрана (у него z-index 3): визитку, заброшенную на
+       заголовок, должно быть видно и можно схватить снова. */
+    z-index: 5;
     -webkit-user-select: none;
     user-select: none;
   }
@@ -561,10 +563,11 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     display: none;
   }
 
-  /* Наклейки: лежат за визиткой, при перетаскивании — поверх всего. */
+  /* Наклейки: за визиткой, но поверх текста — брошенную на текст наклейку
+     можно взять снова. При перетаскивании — поверх всего. */
   .sticker {
     position: absolute;
-    z-index: 1;
+    z-index: 4;
     rotate: var(--r, 0deg);
     pointer-events: auto;
     touch-action: none;
@@ -576,7 +579,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     cursor: grab;
   }
   .sticker:global(.is-dragging) {
-    z-index: 5;
+    z-index: 6;
     cursor: grabbing;
   }
   .sticker-seal {

@@ -5,7 +5,8 @@
 //   и после оборотов она встаёт той стороной, к которой ближе.
 // - Клик или кнопка — перевернуть. Касание на телефоне — тоже; свайп вбок
 //   крутит визитку, вертикальный — как обычно листает страницу.
-// - Прокрутка страницы раскачивает визитку по инерции.
+// - Прокрутка страницы на компьютере слегка относит визитку в сторону, как
+//   ветер; на сенсорных экранах прокрутка её не трогает.
 // - Под курсором визитка наклоняется, по ней бежит блик, на портрете
 //   разбегаются точки (scripts/portrait.ts).
 // Когда всё замерло или визитка ушла с экрана, расчёт останавливается.
@@ -26,10 +27,12 @@ const ITERATIONS = 8;
 // Пружина поворота вокруг вертикальной оси: жёсткость и затухание.
 const SPIN_K = 95;
 const SPIN_C = 11;
+/** Сила «ветра» от прокрутки на полной скорости, px/с². */
+const WIND = 280;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-export function initBadge(root: HTMLElement, motion: boolean): () => void {
+export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): () => void {
   const card = root.querySelector<HTMLElement>("[data-badge-card]")!;
   const swing = root.querySelector<HTMLElement>("[data-badge-swing]")!;
   const spinEl = root.querySelector<HTMLElement>("[data-badge-spin]")!;
@@ -43,9 +46,12 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
     cleanups.push(() => target.removeEventListener(type, fn as EventListener, options));
   };
 
-  // Цветной портрет и фото с оборота — после загрузки страницы, заранее:
-  // к первому наведению или перевороту они уже будут готовы.
-  root.querySelectorAll<HTMLImageElement>("[data-badge-deferred]").forEach((img) => void load(img));
+  // Фото с оборота и цветной портрет — после загрузки страницы, заранее:
+  // к перевороту или первому наведению они уже будут готовы. Цветной портрет
+  // виден только в «линзе» под курсором — без мыши его незачем качать.
+  root.querySelectorAll<HTMLImageElement>("[data-badge-deferred]").forEach((img) => {
+    if (fine || img.dataset.badgeDeferred !== "hover") void load(img);
+  });
 
   /** Видимая сторона: другая выключена из фокуса и для скринридера. */
   let face = 0;
@@ -149,13 +155,14 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
 
   const step = (dt: number) => {
     const g = GRAVITY * dt * dt;
+    const blow = held ? 0 : gsap.utils.clamp(-1, 1, wind / 2500) * WIND * dt * dt;
     for (const p of [...pts, bottom]) {
       if (!p.w) continue;
       const vx = (p.x - p.px) * AIR;
       const vy = (p.y - p.py) * AIR;
       p.px = p.x;
       p.py = p.y;
-      p.x += vx;
+      p.x += vx + (p === bottom ? blow : 0);
       p.y += vy + g;
     }
     for (let k = 0; k < ITERATIONS; k++) {
@@ -230,22 +237,24 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
   let awake = false;
   let visible = false;
   let quiet = 0;
+  // «Ветер» от прокрутки: пока страница едет, визитку относит в сторону
+  // (вниз — вправо), остановилась — визитка мягко возвращается. Скорость
+  // сглажена за ~0,15 с: шаг прокрутки между кадрами скачет (кадры и
+  // прокрутка идут не в ногу), и сырой шаг тряс бы визитку. Только для мыши:
+  // на телефоне прокрутка — это палец, и визитке незачем дёргаться.
   let lastScroll = scrollY;
-  let scrollSpeed = 0;
-  /** Толчок от ускорения прокрутки: вниз — вправо, вверх — влево. Сильно
-   *  отклонённую визитку больше не толкаем. */
-  const inertia = () => {
-    const speed = scrollY - lastScroll;
+  let wind = 0;
+  const breeze = (dt: number) => {
+    const speed = (scrollY - lastScroll) / Math.max(dt, 1 / 240);
     lastScroll = scrollY;
-    const push = gsap.utils.clamp(-2.5, 2.5, (speed - scrollSpeed) * 0.05);
-    scrollSpeed = speed;
-    if (held || Math.abs(angle()) > 0.45) return;
-    bottom.x += push;
+    if (!fine) return;
+    wind += (speed - wind) * (1 - Math.exp(-dt / 0.15));
+    if (Math.abs(wind) < 2) wind = 0;
   };
 
   const tick = (_time: number, deltaMs: number) => {
     const dt = Math.min(deltaMs, 50) / 1000;
-    inertia();
+    breeze(dt);
     for (let s = 0; s < SUBSTEPS; s++) step(dt / SUBSTEPS);
     spin(dt);
     const ease = 1 - Math.exp(-dt * 9);
@@ -261,7 +270,7 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
       !hover &&
       !freeSpin &&
       !dots &&
-      scrollSpeed === 0 &&
+      wind === 0 &&
       energy < 0.02 &&
       Math.abs(target - phi) < 0.05 &&
       Math.abs(omega) < 0.05 &&
@@ -273,6 +282,8 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
     quiet = 0;
     if (awake || !visible) return;
     awake = true;
+    // Пока спали, страница могла уехать далеко: скорость — с этого кадра.
+    lastScroll = scrollY;
     gsap.ticker.add(tick);
   };
   const sleep = () => {
@@ -440,8 +451,14 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
   });
   seen.observe(root);
 
+  // Пересобрать сцену — только когда сменилась ширина. На телефоне при
+  // прокрутке прячется и выезжает адресная строка: высота окна меняется, и
+  // сброс визитки в покой выглядел бы рывком.
   let resizeTimer = 0;
+  let lastWidth = window.innerWidth;
   listen(window, "resize", () => {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
     clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       reset();
@@ -452,9 +469,13 @@ export function initBadge(root: HTMLElement, motion: boolean): () => void {
 
   reset();
   render();
-  void createPortrait(portraitBox).then((p) => {
-    portrait = p;
-  });
+  // Точки разбегаются только под курсором мыши. Без мыши портрет остаётся
+  // чёткой SVG-картинкой — и не подменяется на глазах.
+  if (fine) {
+    void createPortrait(portraitBox).then((p) => {
+      portrait = p;
+    });
+  }
 
   return () => {
     cleanups.forEach((fn) => fn());

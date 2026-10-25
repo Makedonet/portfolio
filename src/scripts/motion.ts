@@ -494,7 +494,7 @@ export function init() {
       const badge = document.querySelector<HTMLElement>("[data-badge]");
       // Перевернуть визитку можно и без анимаций — это содержимое, не украшение.
       if (!motion) {
-        const stopBadge = badge ? initBadge(badge, false) : () => {};
+        const stopBadge = badge ? initBadge(badge, false, fine) : () => {};
         return () => stopBadge();
       }
       // Класс включает то, что имеет смысл только при движении (кнопки паузы окон).
@@ -519,7 +519,7 @@ export function init() {
           // Визитка — первым делом: она на первом экране и ждёт рук.
           () => {
             if (badge) {
-              stopBadge = initBadge(badge, true);
+              stopBadge = initBadge(badge, true, fine);
               stopStickers = initStickers(badge.closest("section") ?? badge);
             }
             if (fine) stopCursor = initCursor();

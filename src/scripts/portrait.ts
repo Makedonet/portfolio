@@ -56,7 +56,9 @@ export async function createPortrait(box: HTMLElement): Promise<Portrait | null>
   const resize = () => {
     const width = box.clientWidth;
     const height = box.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Плотность — как у экрана (до 3x): иначе точки мутнее, чем в SVG,
+    // и подмена была бы заметна.
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     scale = width / VIEW_WIDTH;
