@@ -98,14 +98,20 @@ async function stitch(page, file, { width, height, vh, dpr, settle }) {
     }
     await page.waitForTimeout(settle);
     // Плавающие кнопки и нижние панели часто появляются только после прокрутки —
-    // прячем их на каждом экране, иначе они повторятся в склейке.
+    // прячем их на каждом экране, иначе они повторятся в склейке. Одной
+    // visibility мало: потомок со своим `visibility: visible` (кнопка «наверх»
+    // в нижней панели шиномонтажа) проступает сквозь скрытого родителя, а
+    // opacity гасит всё содержимое.
     await page.evaluate(() => {
       for (const el of document.querySelectorAll("body *")) {
         const cs = getComputedStyle(el);
         if (cs.position !== "fixed") continue;
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
-        if (r.top > innerHeight * 0.45 || r.height > innerHeight * 0.6) el.style.setProperty("visibility", "hidden", "important");
+        if (r.top > innerHeight * 0.45 || r.height > innerHeight * 0.6) {
+          el.style.setProperty("visibility", "hidden", "important");
+          el.style.setProperty("opacity", "0", "important");
+        }
       }
     });
     const shot = await page.screenshot({ type: "png" });
@@ -195,6 +201,7 @@ for (const job of jobs) {
         // Плавающие кнопки, нижние панели, баннеры, открывающиеся меню — в
         // кадре им не место. Фиксированное у верха (бургер) остаётся: оно часть шапки.
         el.style.setProperty("visibility", "hidden", "important");
+        el.style.setProperty("opacity", "0", "important");
         hidden.push(el.tagName.toLowerCase() + "." + String(el.className).slice(0, 40));
       }
     }
