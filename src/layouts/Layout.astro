@@ -104,8 +104,14 @@ const structuredData = {
           const nodes = [...document.querySelectorAll("[data-vt]")];
           const el = ids.filter(Boolean).reduce((found, id) => found ?? nodes.find((node) => node.dataset.vt === id && visible(node)), undefined);
           if (!el) return;
-          el.style.viewTransitionName = "case-visual";
-          transition.finished.finally(() => el.style.removeProperty("view-transition-name"));
+          // Телефон у окна — своим слоем: без имени он остался бы в снимке
+          // страницы, под слоем окна, и до конца перехода стоял бы за ним.
+          const phone = el.closest("[data-case]")?.querySelector("[data-case-phone]");
+          const layers = [[el, "case-visual"], ...(phone && visible(phone) ? [[phone, "case-phone"]] : [])];
+          for (const [node, name] of layers) {
+            node.style.viewTransitionName = name;
+            transition.finished.finally(() => node.style.removeProperty("view-transition-name"));
+          }
         };
         // Уходим на кейс — его превью здесь, а нет превью — окно этой страницы
         // кейса (с ним же уходим на главную).

@@ -31,8 +31,9 @@
 }
 
 /* Переход между страницами: страница сменяется плавно, окно сайта из превью
-   кейса перетекает в окно на его странице (имя case-visual ему даёт скрипт в
-   Layout.astro). Шапка на всех страницах одна — она стоит на месте. */
+   кейса перетекает в окно на его странице, телефон — в телефон (имена
+   case-visual и case-phone им даёт скрипт в Layout.astro). Шапка на всех
+   страницах одна — она стоит на месте. */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition {
     navigation: auto;
@@ -41,12 +42,15 @@
 [data-header] {
   view-transition-name: site-header;
 }
-::view-transition-group(case-visual) {
+::view-transition-group(case-visual),
+::view-transition-group(case-phone) {
   animation-duration: 0.7s;
   animation-timing-function: var(--ease-out-expo);
 }
 ::view-transition-old(case-visual),
-::view-transition-new(case-visual) {
+::view-transition-new(case-visual),
+::view-transition-old(case-phone),
+::view-transition-new(case-phone) {
   height: 100%;
   object-fit: cover;
   object-position: top;
