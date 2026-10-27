@@ -41,12 +41,13 @@ def face(src: Path) -> None:
     rgb.putalpha(cut.getchannel("A"))
     rgb.save(OUT / "face.png", optimize=True)
     print("face.png", rgb.size)
-    # Голова крупно — для кружков-аватарок: квадрат вокруг лица и кепки.
+    # Голова крупно — для кружков-аватарок: квадрат по центру головы с кепкой
+    # (верхние 40% кадра — ниже уже плечи), над кепкой немного воздуха.
     alpha = rgb.getchannel("A")
-    left, top, right, _ = alpha.crop((0, 0, rgb.width, round(rgb.height * 0.55))).point(lambda a: 255 if a > 8 else 0).getbbox()
-    size = round(rgb.width * 0.6)
-    cx = right - size // 2 + 10
-    head = rgb.crop((cx - size // 2, max(top - 10, 0), cx + size // 2, max(top - 10, 0) + size))
+    left, top, right, _ = alpha.crop((0, 0, rgb.width, round(rgb.height * 0.4))).point(lambda a: 255 if a > 8 else 0).getbbox()
+    size = round(rgb.width * 0.58)
+    cx = (left + right) // 2
+    head = rgb.crop((cx - size // 2, top - 28, cx + size // 2, top - 28 + size))
     head.resize((320, 320), Image.LANCZOS).save(OUT / "head.png", optimize=True)
     print("head.png", head.size)
 
