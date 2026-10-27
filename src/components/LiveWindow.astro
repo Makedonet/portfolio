@@ -91,14 +91,16 @@ const prepared = await Promise.all(
         <span class="size-2 rounded-full bg-[#e2dfd6]" aria-hidden="true" />
         <span class="size-2 rounded-full bg-[#e2dfd6]" aria-hidden="true" />
         <span class="size-2 rounded-full bg-[#e2dfd6]" aria-hidden="true" />
-        <span
-          class="relative mx-auto max-w-[70%] overflow-hidden rounded-md bg-paper px-3 py-0.5 font-mono text-xs leading-4 text-muted"
-          aria-hidden="true"
-        >
-          <span class="block truncate" data-live-url>
-            {first.url}
+        {/* Адрес занимает только свободное место строки (w-0 flex-1) и не
+            влияет на ширину окна: иначе длинный адрес следующей страницы
+            распирал бы колонку, где стоит окно, и страницу на телефоне. */}
+        <span class="flex w-0 flex-1 justify-center" aria-hidden="true">
+          <span class="relative max-w-[85%] overflow-hidden rounded-md bg-paper px-3 py-0.5 font-mono text-xs leading-4 text-muted">
+            <span class="block truncate" data-live-url>
+              {first.url}
+            </span>
+            <span class="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-ink/35" data-live-progress />
           </span>
-          <span class="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-ink/35" data-live-progress />
         </span>
         {toggle ? (
           <button

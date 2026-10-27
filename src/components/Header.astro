@@ -13,7 +13,7 @@ const link = (href: string) => (home || href === "#contact" ? href : `/${href}`)
 <header class="sticky top-0 z-30 border-b border-transparent bg-paper/90 backdrop-blur-md" data-header>
   {/* Сколько страницы прочитано — жёлтая полоса по нижнему краю (motion.ts). */}
   <span class="pointer-events-none absolute inset-x-0 -bottom-px h-[3px] origin-left scale-x-0 bg-accent" aria-hidden="true" data-progress></span>
-  <div class="container-page flex h-16 items-center gap-4 lg:h-[4.5rem]">
+  <div class="container-page flex h-16 items-center gap-3 sm:gap-4 lg:h-[4.5rem]">
     <a href={home ? "#top" : "/"} class="group -m-1 flex items-center gap-3 rounded-lg p-1">
       <Logo class="h-7 w-auto lg:h-8" />
       <span class="leading-tight">
@@ -64,7 +64,8 @@ const link = (href: string) => (home || href === "#contact" ? href : `/${href}`)
       </a>
       <a href={phone.href} class="btn btn-primary h-11 min-h-11 px-3.5 text-sm sm:px-4" title={`Позвонить: ${phone.display}`}>
         <Icon name="phone" class="size-4" />
-        <span class="sm:hidden">Позвонить</span>
+        {/* Уже 360 px строка не вмещает логотип, Telegram и подпись — остаётся значок. */}
+        <span class="max-[359px]:sr-only sm:hidden">Позвонить</span>
         <span class="hidden sm:inline">{phone.display}</span>
       </a>
     </div>

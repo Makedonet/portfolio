@@ -46,7 +46,7 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
         <span class="font-mono text-[0.8125rem] text-muted">Кейс {num(index)} из {String(works.length).padStart(2, "0")}</span>
       </div>
 
-      <div class="mt-8 grid gap-6 border-b border-line pb-10 sm:mt-12 lg:grid-cols-12 lg:items-end lg:gap-10 lg:pb-12">
+      <div class="mt-8 grid grid-cols-1 gap-6 border-b border-line pb-10 sm:mt-12 lg:grid-cols-12 lg:items-end lg:gap-10 lg:pb-12">
         <div class="lg:col-span-8">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="font-mono text-[0.8125rem] text-muted">{work.industry}</span>
@@ -62,7 +62,7 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
           </div>
           <h1
             id="case-title"
-            class="mt-4 text-[2.5rem] leading-[1.04] font-bold tracking-[-0.035em] text-balance sm:text-6xl xl:text-7xl"
+            class="mt-4 text-[clamp(2rem,10vw,2.5rem)] leading-[1.04] font-bold tracking-[-0.035em] text-balance sm:text-6xl xl:text-7xl"
             set:html={typo(work.title)}
           />
         </div>
