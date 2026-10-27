@@ -10,7 +10,7 @@
   {"id": "shino-home-mobile", "base": "https://shinomontazh-narodnaya-55.ru", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "shinomontazh-narodnaya-55.ru", "settle": 1200, "mode": "stitch"},
   {"id": "moyka-desktop", "base": "https://moyka-vitebskiy.ru", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "moyka-vitebskiy.ru", "settle": 1200},
   {"id": "moyka-mobile", "base": "https://moyka-vitebskiy.ru", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "moyka-vitebskiy.ru", "settle": 1200},
-  {"id": "ti-desktop", "base": "https://ti-redesign-iota.vercel.app", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "ti-redesign-iota.vercel.app"},
+  {"id": "ti-desktop", "base": "https://ti-redesign-iota.vercel.app", "path": "/", "device": "desktop", "maxHeight": 15000, "url": "ti-redesign-iota.vercel.app", "prepare": "stage-per-chapter", "strip": false},
   {"id": "ti-mobile", "base": "https://ti-redesign-iota.vercel.app", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "ti-redesign-iota.vercel.app"},
   {"id": "omega-desktop", "base": "https://omegadet.vercel.app", "path": "/", "device": "desktop", "maxHeight": 9000, "url": "omegadet.vercel.app"},
   {"id": "omega-mobile", "base": "https://omegadet.vercel.app", "path": "/", "device": "mobile", "maxHeight": 5200, "url": "omegadet.vercel.app"},

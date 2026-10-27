@@ -6,15 +6,18 @@
 //   node tools/live-post.mjs                    # постеры, полосы шапок, остановки
 //
 // Задание в live-jobs.json: { id, base (https://…) | root (папка со статикой),
-// path, device: "desktop" | "mobile", maxHeight, url, settle?, mode? }; settle —
-// пауза на шаге прокрутки, мс, для страниц с картами и виджетами; mode: "stitch"
-// — склейка из снимков экрана (см. stitch ниже). Компьютер снимается на
+// path, device: "desktop" | "mobile", maxHeight, url, settle?, mode?, prepare?,
+// strip? }; settle — пауза на шаге прокрутки, мс, для страниц с картами и
+// виджетами; mode: "stitch" — склейка из снимков экрана (см. stitch ниже);
+// prepare — имя подготовки страницы перед снимком (см. prepare ниже); strip:
+// false — без полосы шапки поверх кадра: у сайта при прокрутке вниз шапка
+// прячется, а липким у верха остаётся что-то своё. Компьютер снимается на
 // 1440×900, телефон — на 390×844 с DPR 2. Для каждого кадра записываются в
 // src/data/live.json высота липкой шапки и остановки «видео» — верхние края
 // секций за вычетом шапки. Плавающие кнопки и нижние панели прячутся, счётчики
 // (Метрика, Callibri) не грузятся: съёмка не должна портить статистику.
 import http from "node:http";
-import { readFile, writeFile, stat, mkdir } from "node:fs/promises";
+import { readFile, writeFile, stat, mkdir, rm } from "node:fs/promises";
 import { join, extname } from "node:path";
 
 let playwright;
@@ -135,6 +138,56 @@ async function stitch(page, file, { width, height, vh, dpr, settle }) {
   });
 }
 
+/**
+ * Подготовка страницы перед снимком — для сайтов, которые в длинный кадр как
+ * есть не ложатся. Задание ссылается на неё полем prepare.
+ */
+const prepare = {
+  // ti-redesign: справа от глав услуг — закреплённая панель, сцены в ней
+  // сменяют друг друга, пока листаются главы. В длинном кадре панель стояла бы
+  // одна у первой главы. К тому же полностраничный снимок растягивает окно на
+  // всю страницу, из-за этого сайт переключает сцену — и она попадает в кадр
+  // прозрачной, на середине перехода. Поэтому у каждой главы ставим свою копию
+  // панели с её сценой, а переходы на странице выключаем.
+  "stage-per-chapter": () => {
+    const style = document.createElement("style");
+    style.textContent = "*, *::before, *::after { transition: none !important; }";
+    document.head.append(style);
+    const stage = document.querySelector("[data-stage]");
+    const chapters = [...document.querySelectorAll(".chapter[data-zone]")];
+    if (!stage || !chapters.length) return;
+    const grid = stage.parentElement;
+    const g = grid.getBoundingClientRect();
+    const s = stage.getBoundingClientRect();
+    // Копия стоит у своей главы так же, как панель у первой.
+    const offset = s.top - chapters[0].getBoundingClientRect().top;
+    grid.style.setProperty("position", "relative", "important");
+    for (const chapter of chapters) {
+      const zone = chapter.dataset.zone;
+      const copy = stage.cloneNode(true);
+      copy.removeAttribute("data-stage");
+      for (const fig of copy.querySelectorAll(".scene")) if (fig.dataset.scene !== zone) fig.remove();
+      const fig = copy.querySelector(".scene");
+      fig?.classList.remove("is-past");
+      fig?.classList.add("is-current", "is-active");
+      const name = document.querySelector(`[data-zone-link="${zone}"]`);
+      copy.querySelector(".stage-zone").textContent = name ? name.textContent.trim() : "";
+      const css = {
+        position: "absolute",
+        margin: "0",
+        left: `${s.left - g.left}px`,
+        width: `${s.width}px`,
+        height: `${s.height}px`,
+        top: `${chapter.getBoundingClientRect().top - g.top + offset}px`,
+      };
+      for (const [k, v] of Object.entries(css)) copy.style.setProperty(k, v, "important");
+      grid.append(copy);
+    }
+    // Не display: none — копии берут градиенты по id из сцен оригинала.
+    stage.style.setProperty("visibility", "hidden", "important");
+  },
+};
+
 // Счётчики и трекеры не грузим: снимок не должен портить статистику заказчика.
 // Только по домену счётчика: слово «metrika» в адресе есть и у собственных
 // модулей сайтов (_astro/metrika.*.js) — без них не грузился весь скрипт
@@ -184,6 +237,10 @@ for (const job of jobs) {
   );
   await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
+  if (job.prepare) {
+    await page.evaluate(prepare[job.prepare]);
+    await page.waitForTimeout(300);
+  }
 
   const info = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth;
@@ -238,7 +295,7 @@ for (const job of jobs) {
   // фон или ужимается. Её полоса лежит поверх листающегося кадра в окне.
   await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), Math.round(vh * 1.5));
   await page.waitForTimeout(700);
-  const strip = await page.evaluate(() => {
+  const strip = job.strip === false ? 0 : await page.evaluate(() => {
     const vw = document.documentElement.clientWidth;
     let bottom = 0;
     for (const el of document.querySelectorAll("body *")) {
@@ -258,6 +315,9 @@ for (const job of jobs) {
       quality: 90,
       clip: { x: 0, y: 0, width: mobile ? 390 : 1440, height: strip },
     });
+  } else {
+    // Полоса от прошлой съёмки легла бы поверх нового кадра: окно берёт её по имени файла.
+    await rm(join(outDir, "headers", `${job.id}.jpg`), { force: true });
   }
 
   // rawStops — исходные края секций; live-post.mjs пересчитывает из них stops.
