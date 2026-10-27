@@ -26,8 +26,9 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
   {/* Текст кейса выше окна, поэтому на широком экране окно едет рядом с ним
       при прокрутке, а не висит посередине с пустотой сверху. Окно и телефон —
       одна группа: пауза в строке адреса останавливает обоих. Окно помечено
-      data-vt: в него перетекает окно из превью на главной. */}
-  <div class="relative lg:sticky lg:top-28 lg:col-span-7" data-live-group data-tilt="5">
+      data-vt: в него перетекает окно из превью на главной. Окно поднято
+      на нижнюю полосу обложки (CaseCover.astro) и стоит на её краю. */}
+  <div class="relative -mt-20 sm:-mt-24 lg:sticky lg:top-28 lg:col-span-7 lg:-mt-44" data-live-group data-tilt="5">
     <div class:list={["relative", phone && "pr-[9%] pb-8 sm:pb-10"]} data-tilt-target>
       <div id="case-window" data-case-visual data-vt={work.id}>
         <LiveWindow

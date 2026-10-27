@@ -1,10 +1,11 @@
 ---
-// Страница кейса: шапка с названием и отраслью, история целиком
-// (WorkCase.astro), переход к следующему кейсу и контакты. На главной от
-// кейса — только превью (WorkCard.astro).
+// Страница кейса: обложка в цветах сайта заказчика (CaseCover.astro), история
+// целиком (WorkCase.astro), переход к следующему кейсу и контакты. На главной
+// от кейса — только превью (WorkCard.astro).
 import { Picture } from "astro:assets";
 import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/Header.astro";
+import CaseCover from "../../components/CaseCover.astro";
 import WorkCase from "../../components/WorkCase.astro";
 import Contact from "../../components/Contact.astro";
 import Footer from "../../components/Footer.astro";
@@ -37,45 +38,7 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
   <link slot="head" rel="expect" href="#case-window" blocking="render" />
   <Header />
   <main id="main" tabindex="-1" class="outline-none">
-    <section id="top" aria-label="О проекте" class="container-page pt-6 sm:pt-10 lg:pt-14">
-      <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <a href="/#works" class="group inline-flex min-h-11 items-center gap-2 text-ink-2 hover:text-ink">
-          <Icon name="arrow-left" class="size-4 transition-transform duration-300 group-hover:-translate-x-1" />
-          <span class="link-line">Все работы</span>
-        </a>
-        <span class="font-mono text-[0.8125rem] text-muted">Кейс {num(index)} из {String(works.length).padStart(2, "0")}</span>
-      </div>
-
-      <div class="mt-8 grid grid-cols-1 gap-6 border-b border-line pb-10 sm:mt-12 lg:grid-cols-12 lg:items-end lg:gap-10 lg:pb-12">
-        <div class="lg:col-span-8">
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="font-mono text-[0.8125rem] text-muted">{work.industry}</span>
-            <span
-              class:list={[
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                work.status.tone === "live" ? "border-ok/30 bg-ok/10 text-ok-text" : "border-line bg-surface text-muted",
-              ]}
-            >
-              {work.status.tone === "live" && <span class="size-1.5 animate-pulse rounded-full bg-ok motion-reduce:animate-none" aria-hidden="true" />}
-              {work.status.label}
-            </span>
-          </div>
-          <h1
-            id="case-title"
-            class="mt-4 text-[clamp(2rem,10vw,2.5rem)] leading-[1.04] font-bold tracking-[-0.035em] text-balance sm:text-6xl xl:text-7xl"
-            set:html={typo(work.title)}
-          />
-        </div>
-        <div class="lg:col-span-4">
-          <p class="text-lg leading-relaxed text-ink-2" set:html={typo(work.kind)} />
-          <a href={work.url} target="_blank" rel="noopener noreferrer" class="btn btn-secondary mt-6">
-            {work.status.tone === "concept" ? "Открыть концепт" : "Открыть сайт"}
-            <Icon name="arrow-up-right" class="size-4" />
-            <span class="sr-only">(откроется в новой вкладке)</span>
-          </a>
-        </div>
-      </div>
-    </section>
+    <CaseCover work={work} index={index} total={works.length} />
 
     <WorkCase work={work} labelledby="case-title" />
 

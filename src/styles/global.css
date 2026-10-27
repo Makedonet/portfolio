@@ -345,12 +345,13 @@
   .case-label-first {
     margin-top: 0;
   }
-  /* Результат для бизнеса — тёмная карточка с жёлтыми цифрами. */
+  /* Результат для бизнеса — тёмная карточка с жёлтыми цифрами. На странице
+     кейса — в тёмный цвет сайта заказчика (--case-deep, CaseCover.astro). */
   .case-result {
     margin-top: 1.25rem;
     padding: 1.25rem 1.25rem 1.1rem;
     border-radius: 1rem;
-    background: var(--color-ink);
+    background: var(--case-deep, var(--color-ink));
     color: var(--color-paper);
   }
   @media (min-width: 640px) {
