@@ -30,6 +30,32 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Переход между страницами: страница сменяется плавно, окно сайта из превью
+   кейса перетекает в окно на его странице (имя case-visual ему даёт скрипт в
+   Layout.astro). Шапка на всех страницах одна — она стоит на месте. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+[data-header] {
+  view-transition-name: site-header;
+}
+::view-transition-group(case-visual) {
+  animation-duration: 0.7s;
+  animation-timing-function: var(--ease-out-expo);
+}
+::view-transition-old(case-visual),
+::view-transition-new(case-visual) {
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+
 @layer base {
   html {
     background: var(--color-paper);
@@ -312,6 +338,9 @@
     margin-top: 0;
     color: var(--color-paper);
   }
+  .case-label-first {
+    margin-top: 0;
+  }
   /* Результат для бизнеса — тёмная карточка с жёлтыми цифрами. */
   .case-result {
     margin-top: 1.25rem;
@@ -444,23 +473,6 @@
     text-align: center;
   }
 
-  /* Пришли к кейсу из индекса работ — окно кейса коротко подсвечивается. */
-  @media (prefers-reduced-motion: no-preference) {
-    [data-case].is-arrived [data-case-visual] {
-      animation: case-arrive 1.6s var(--ease-out) both;
-    }
-  }
-  @keyframes case-arrive {
-    0% {
-      box-shadow: 0 0 0 0 rgb(255 212 59 / 0);
-    }
-    25% {
-      box-shadow: 0 0 0 6px rgb(255 212 59 / 0.9);
-    }
-    100% {
-      box-shadow: 0 0 0 16px rgb(255 212 59 / 0);
-    }
-  }
   [data-case-visual] {
     border-radius: 0.75rem;
   }

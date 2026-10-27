@@ -1,4 +1,7 @@
 ---
+// Демо — карточкой в ряд с превью кейсов (WorkCard.astro): окно сайта,
+// название и строка о проекте. Своей страницы у демо нет — ссылки ведут на
+// сам сайт и на код.
 import LiveWindow from "./LiveWindow.astro";
 import Icon from "./Icon.astro";
 import type { Demo } from "../data/works";
@@ -11,48 +14,31 @@ interface Props {
 
 const { demo, index } = Astro.props;
 const headingId = `demo-${demo.id}`;
-const phone = demo.screens.mobile;
 ---
 
 <article aria-labelledby={headingId} class="flex flex-col" data-case>
-  <div class="relative" data-live-group data-tilt="5">
-    <div class:list={["relative", phone && "pr-[9%] pb-7"]} data-tilt-target>
+  <div class="relative" data-live-group data-tilt="4">
+    <div data-tilt-target>
       <div data-case-visual>
         <LiveWindow
           scenes={demo.screens.desktop}
           device="desktop"
-          sizes="(min-width: 1280px) 33rem, (min-width: 768px) 42vw, 84vw"
+          sizes="(min-width: 1280px) 23rem, (min-width: 1024px) 29vw, 92vw"
           label={`Демо ${demo.urlLabel} листается само`}
           href={demo.url}
           toggle={demo.urlLabel}
           delay={0.5 + index * 0.9}
         />
       </div>
-      {
-        phone && (
-          <div class="absolute right-0 bottom-0 w-[22%]" data-depth="16">
-            <div data-case-phone>
-              <LiveWindow
-                scenes={[phone]}
-                device="mobile"
-                sizes="(min-width: 768px) 8rem, 22vw"
-                label={`Мобильная версия ${demo.urlLabel} листается сама`}
-                href={demo.url}
-                delay={1.5 + index * 0.9}
-              />
-            </div>
-          </div>
-        )
-      }
     </div>
   </div>
-  <div class="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1" data-fade>
+  <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1" data-fade>
     <h4 id={headingId} class="text-2xl font-bold tracking-[-0.02em]">{demo.title}</h4>
     <span class="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs font-medium text-muted">Демо</span>
   </div>
   <p class="mt-1 text-muted" data-fade set:html={typo(demo.kind)} />
-  <p class="mt-4 leading-relaxed text-ink-2" data-fade set:html={typo(demo.summary)} />
-  <div class="mt-5 flex flex-wrap gap-x-6 gap-y-2" data-fade>
+  <p class="mt-3 leading-relaxed text-ink-2" data-fade set:html={typo(demo.summary)} />
+  <div class="mt-auto flex flex-wrap gap-x-6 gap-y-1 pt-4" data-fade>
     <a href={demo.url} target="_blank" rel="noopener noreferrer" class="group inline-flex min-h-11 items-center gap-2 font-semibold">
       <span class="link-line">Открыть демо</span>
       <Icon name="arrow-up-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />

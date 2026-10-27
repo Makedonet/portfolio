@@ -87,7 +87,34 @@ const structuredData = {
       // Класс включает начальные состояния анимаций. Без скрипта страница
       // видна целиком сразу.
       document.documentElement.classList.add("js");
+
+      // Переход между главной и страницей кейса (global.css, @view-transition):
+      // окно сайта перетекает из превью в окно на странице кейса и обратно.
+      // Имя перехода получает только видимое окно ([data-vt]) того кейса, куда
+      // или откуда идём: окно за краем экрана прилетело бы из-за него.
+      // pagereveal приходит до первой отрисовки — поэтому здесь, а не в модуле.
+      (() => {
+        const caseOf = (url) => (url ? /^\/works\/([^/]+)\/?$/.exec(new URL(url, location.href).pathname)?.[1] : undefined);
+        const mark = (ids, transition) => {
+          if (!transition) return;
+          const visible = (node) => {
+            const r = node.getBoundingClientRect();
+            return r.width > 0 && r.bottom > 0 && r.top < innerHeight;
+          };
+          const nodes = [...document.querySelectorAll("[data-vt]")];
+          const el = ids.filter(Boolean).reduce((found, id) => found ?? nodes.find((node) => node.dataset.vt === id && visible(node)), undefined);
+          if (!el) return;
+          el.style.viewTransitionName = "case-visual";
+          transition.finished.finally(() => el.style.removeProperty("view-transition-name"));
+        };
+        // Уходим на кейс — его превью здесь, а нет превью — окно этой страницы
+        // кейса (с ним же уходим на главную).
+        addEventListener("pageswap", (e) => mark([caseOf(e.activation?.entry?.url), caseOf(location.href)], e.viewTransition));
+        // Пришли на кейс — его окно; пришли с кейса на главную — его превью.
+        addEventListener("pagereveal", (e) => mark([caseOf(location.href), caseOf(window.navigation?.activation?.from?.url)], e.viewTransition));
+      })();
     </script>
+    <slot name="head" />
   </head>
   <body class="min-h-dvh bg-paper text-ink">
     <a

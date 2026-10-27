@@ -1,13 +1,13 @@
 ---
 // Индекс работ под первым экраном: клиент, отрасль и главное, что дал сайт, —
-// по строке на работу. Строка ведёт к кейсу (его id — case-…, WorkCase.astro),
-// кейс коротко подсвечивается, когда до него доехали. При наведении мышью строка
-// заливается жёлтым, а за курсором плывёт превью сайта (scripts/works-index.ts):
-// пружина, наклон от скорости, смена картинки сдвигом. На телефоне превью
-// нет — миниатюра стоит прямо в строке.
+// по строке на работу. Строка ведёт на страницу кейса. При наведении мышью
+// строка заливается жёлтым, а за курсором плывёт превью сайта
+// (scripts/works-index.ts): пружина, наклон от скорости, смена картинки
+// сдвигом. На телефоне превью нет — миниатюра стоит прямо в строке и при
+// переходе перетекает в окно на странице кейса (data-vt, Layout.astro).
 import { Picture, getImage } from "astro:assets";
 import Icon from "./Icon.astro";
-import { works } from "../data/works";
+import { caseUrl, works } from "../data/works";
 import { scene } from "../data/live";
 import { typo } from "../lib/typo";
 
@@ -36,7 +36,7 @@ const rows = await Promise.all(
     {
       rows.map(({ work, poster, n }, i) => (
         <li class="index-row">
-          <a href={`#case-${work.id}`} class="index-link" data-index-row={i}>
+          <a href={caseUrl(work.id)} class="index-link" data-index-row={i}>
             <span class="index-fill" aria-hidden="true" />
             <span class="index-num" aria-hidden="true">
               {n}
@@ -51,11 +51,12 @@ const rows = await Promise.all(
               loading="lazy"
               decoding="async"
               class="index-thumb"
+              data-vt={work.id}
             />
             <span class="index-name" set:html={typo(work.title)} />
             <span class="index-industry">{work.industry}</span>
             <span class="index-result" set:html={typo(work.highlight)} />
-            <Icon name="arrow-down" class="index-arrow" />
+            <Icon name="arrow-right" class="index-arrow" />
           </a>
         </li>
       ))
@@ -204,7 +205,7 @@ const rows = await Promise.all(
       translate: 0.6rem 0;
     }
     .index-link:hover :global(.index-arrow) {
-      translate: 0 0.25rem;
+      translate: 0.25rem 0;
     }
     .index-link:hover .index-num,
     .index-link:hover .index-industry {

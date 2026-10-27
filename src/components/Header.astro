@@ -4,18 +4,22 @@ import Icon from "./Icon.astro";
 import { contact, nav, phone, site } from "../data/site";
 
 const telegram = contact("telegram");
+// На страницах кейсов разделы меню — на главной. Контакты есть внизу любой
+// страницы, поэтому эта ссылка остаётся на месте.
+const home = Astro.url.pathname === "/";
+const link = (href: string) => (home || href === "#contact" ? href : `/${href}`);
 ---
 
 <header class="sticky top-0 z-30 border-b border-transparent bg-paper/90 backdrop-blur-md" data-header>
   {/* Сколько страницы прочитано — жёлтая полоса по нижнему краю (motion.ts). */}
   <span class="pointer-events-none absolute inset-x-0 -bottom-px h-[3px] origin-left scale-x-0 bg-accent" aria-hidden="true" data-progress></span>
   <div class="container-page flex h-16 items-center gap-4 lg:h-[4.5rem]">
-    <a href="#top" class="group -m-1 flex items-center gap-3 rounded-lg p-1">
+    <a href={home ? "#top" : "/"} class="group -m-1 flex items-center gap-3 rounded-lg p-1">
       <Logo class="h-7 w-auto lg:h-8" />
       <span class="leading-tight">
         <span class="block text-[1.0625rem] font-semibold tracking-tight">{site.name}</span>
         <span class="block text-xs text-muted">сайты под ключ</span>
-        <span class="sr-only">— в начало страницы</span>
+        <span class="sr-only">{home ? "— в начало страницы" : "— на главную"}</span>
       </span>
     </a>
 
@@ -24,7 +28,7 @@ const telegram = contact("telegram");
         {
           nav.map((item) => (
             <li>
-              <a href={item.href} class="nav-link block rounded-lg px-3 py-2 text-[0.9375rem] text-ink-2 transition-colors duration-200 hover:text-ink">
+              <a href={link(item.href)} class="nav-link block rounded-lg px-3 py-2 text-[0.9375rem] text-ink-2 transition-colors duration-200 hover:text-ink">
                 {item.label}
               </a>
             </li>

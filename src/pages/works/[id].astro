@@ -1,0 +1,199 @@
+---
+// Страница кейса: шапка с названием и отраслью, история целиком
+// (WorkCase.astro), переход к следующему кейсу и контакты. На главной от
+// кейса — только превью (WorkCard.astro).
+import { Picture } from "astro:assets";
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import WorkCase from "../../components/WorkCase.astro";
+import Contact from "../../components/Contact.astro";
+import Footer from "../../components/Footer.astro";
+import Icon from "../../components/Icon.astro";
+import { caseUrl, works, type Work } from "../../data/works";
+import { scene } from "../../data/live";
+import { site } from "../../data/site";
+import { typo } from "../../lib/typo";
+
+export function getStaticPaths() {
+  return works.map((work, index) => ({ params: { id: work.id }, props: { work, index } }));
+}
+
+interface Props {
+  work: Work;
+  index: number;
+}
+
+const { work, index } = Astro.props;
+const num = (i: number) => String(i + 1).padStart(2, "0");
+// За последним кейсом снова первый: дальше всегда есть куда идти.
+const nextIndex = (index + 1) % works.length;
+const next = works[nextIndex]!;
+const nextPoster = scene(next.screens.desktop[0]!).poster;
+---
+
+<Layout title={`Кейс ${work.title} · ${site.title}`} description={work.summary}>
+  {/* Первая отрисовка ждёт окно кейса: иначе переход с главной не найдёт,
+      во что перетекать превью. */}
+  <link slot="head" rel="expect" href="#case-window" blocking="render" />
+  <Header />
+  <main id="main" tabindex="-1" class="outline-none">
+    <section id="top" aria-label="О проекте" class="container-page pt-6 sm:pt-10 lg:pt-14">
+      <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <a href="/#works" class="group inline-flex min-h-11 items-center gap-2 text-ink-2 hover:text-ink">
+          <Icon name="arrow-left" class="size-4 transition-transform duration-300 group-hover:-translate-x-1" />
+          <span class="link-line">Все работы</span>
+        </a>
+        <span class="font-mono text-[0.8125rem] text-muted">Кейс {num(index)} из {String(works.length).padStart(2, "0")}</span>
+      </div>
+
+      <div class="mt-8 grid gap-6 border-b border-line pb-10 sm:mt-12 lg:grid-cols-12 lg:items-end lg:gap-10 lg:pb-12">
+        <div class="lg:col-span-8">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span class="font-mono text-[0.8125rem] text-muted">{work.industry}</span>
+            <span
+              class:list={[
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                work.status.tone === "live" ? "border-ok/30 bg-ok/10 text-ok-text" : "border-line bg-surface text-muted",
+              ]}
+            >
+              {work.status.tone === "live" && <span class="size-1.5 animate-pulse rounded-full bg-ok motion-reduce:animate-none" aria-hidden="true" />}
+              {work.status.label}
+            </span>
+          </div>
+          <h1
+            id="case-title"
+            class="mt-4 text-[2.5rem] leading-[1.04] font-bold tracking-[-0.035em] text-balance sm:text-6xl xl:text-7xl"
+            set:html={typo(work.title)}
+          />
+        </div>
+        <div class="lg:col-span-4">
+          <p class="text-lg leading-relaxed text-ink-2" set:html={typo(work.kind)} />
+          <a href={work.url} target="_blank" rel="noopener noreferrer" class="btn btn-secondary mt-6">
+            {work.status.tone === "concept" ? "Открыть концепт" : "Открыть сайт"}
+            <Icon name="arrow-up-right" class="size-4" />
+            <span class="sr-only">(откроется в новой вкладке)</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <WorkCase work={work} labelledby="case-title" />
+
+    {/* Следующий кейс — во всю ширину, как строка индекса работ: жёлтая заливка
+        снизу при наведении. Превью помечено data-vt — перетекает в окно на
+        странице следующего кейса. */}
+    <nav aria-label="Другие кейсы" class="border-y border-line bg-surface">
+      <a href={caseUrl(next.id)} class="case-next">
+        <span class="case-next-fill" aria-hidden="true"></span>
+        <span class="container-page case-next-inner">
+          <span class="case-next-text">
+            <span class="font-mono text-[0.8125rem] text-muted">Следующий кейс · {num(nextIndex)} · {next.industry}</span>
+            <span class="case-next-title" set:html={typo(next.title)} />
+            <span class="text-ink-2" set:html={typo(next.highlight)} />
+          </span>
+          <Picture
+            src={nextPoster}
+            alt=""
+            widths={[320, 480, 640]}
+            sizes="(min-width: 640px) 16rem, 40vw"
+            formats={["avif"]}
+            fallbackFormat="webp"
+            loading="lazy"
+            decoding="async"
+            class="case-next-thumb"
+            data-vt={next.id}
+          />
+          <Icon name="arrow-right" class="case-next-arrow" />
+        </span>
+      </a>
+    </nav>
+
+    <Contact />
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .case-next {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    overflow: clip;
+  }
+  .case-next-fill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.55s var(--ease-out-expo);
+  }
+  .case-next:hover .case-next-fill,
+  .case-next:focus-visible .case-next-fill {
+    transform: scaleY(1);
+  }
+  .case-next-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "text text"
+      "thumb arrow";
+    align-items: center;
+    gap: 1.25rem 2rem;
+    padding-block: 2.5rem;
+  }
+  .case-next-text {
+    grid-area: text;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .case-next-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    transition: translate 0.5s var(--ease-out-expo);
+  }
+  .case-next-thumb {
+    grid-area: thumb;
+    width: min(16rem, 60%);
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 0.75rem;
+    box-shadow:
+      0 0 0 1px rgb(17 17 16 / 0.1),
+      0 14px 36px -14px rgb(17 17 16 / 0.35);
+    transition: rotate 0.6s var(--ease-out-expo);
+  }
+  .case-next :global(.case-next-arrow) {
+    grid-area: arrow;
+    width: 2.5rem;
+    height: 2.5rem;
+    transition: translate 0.45s var(--ease-out-expo);
+  }
+  .case-next:hover .case-next-title {
+    translate: 0.6rem 0;
+  }
+  .case-next:hover .case-next-thumb {
+    rotate: -3deg;
+  }
+  .case-next:hover :global(.case-next-arrow) {
+    translate: 0.4rem 0;
+  }
+
+  @media (min-width: 768px) {
+    .case-next-inner {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-areas: "text thumb arrow";
+      gap: 2.5rem;
+      padding-block: 3.5rem;
+    }
+    .case-next-thumb {
+      width: 16rem;
+    }
+  }
+</style>

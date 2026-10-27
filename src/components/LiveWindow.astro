@@ -20,7 +20,8 @@ interface Props {
   eager?: boolean;
   /** Главная картинка первого экрана (LCP). */
   priority?: boolean;
-  /** Куда ведёт клик по экрану окна. */
+  /** Куда ведёт клик по экрану окна: сам сайт (в новой вкладке) или страница
+   *  кейса. */
   href?: string;
   /** Кнопка паузы в строке адреса: останавливает все окна группы. Значение —
    *  чьи окна (для подписи кнопки): кнопок на странице несколько, и у каждой
@@ -33,6 +34,7 @@ interface Props {
 
 const { scenes: ids, device, sizes, label, eager = false, priority = false, href, toggle, delay = 0, class: className } = Astro.props;
 const desktop = device === "desktop";
+const external = /^https?:/.test(href ?? "");
 const scenes = ids.map(loadScene);
 const first = scenes[0]!;
 const screenHeight = viewportHeight(device);
@@ -182,6 +184,6 @@ const prepared = await Promise.all(
       ))
     }
     </div>
-    {href && <a href={href} target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true" class="absolute inset-0 z-10" />}
+    {href && <a href={href} {...(external && { target: "_blank", rel: "noopener noreferrer" })} tabindex="-1" aria-hidden="true" class="absolute inset-0 z-10" />}
   </div>
 </div>

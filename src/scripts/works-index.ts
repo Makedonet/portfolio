@@ -2,40 +2,15 @@
 // сайта той строки, над которой мышь, — над курсором, чтобы не закрывать саму
 // строку. Позиция — пружиной (quickTo), наклон — от скорости курсора, смена
 // работы — сдвигом ленты картинок внутри превью.
-// Картинки грузятся при первом наведении. Клик по строке ведёт к кейсу, и
-// окно кейса коротко подсвечивается — видно, куда пришли.
-// Только для мыши и без «уменьшить движение»; переход к кейсу с подсветкой —
-// всегда, где есть движение.
+// Картинки грузятся при первом наведении. Строка ведёт на страницу кейса.
+// Только для мыши и без «уменьшить движение».
 import { gsap } from "gsap";
 import { load } from "./deferred";
 
 export function initWorksIndex(root: HTMLElement, fine: boolean): () => void {
-  const cleanups: Array<() => void> = [];
-  const rows = [...root.querySelectorAll<HTMLAnchorElement>("[data-index-row]")];
-
-  // Подсветка кейса после перехода: ждём, пока плавная прокрутка доедет.
-  rows.forEach((row) => {
-    const onClick = () => {
-      const target = document.querySelector(row.hash)?.closest<HTMLElement>("[data-case]");
-      if (!target) return;
-      target.classList.remove("is-arrived");
-      let timer = 0;
-      const arrive = () => {
-        clearTimeout(timer);
-        removeEventListener("scrollend", arrive);
-        target.classList.add("is-arrived");
-        window.setTimeout(() => target.classList.remove("is-arrived"), 1700);
-      };
-      addEventListener("scrollend", arrive, { once: true });
-      timer = window.setTimeout(arrive, 1400);
-    };
-    row.addEventListener("click", onClick);
-    cleanups.push(() => row.removeEventListener("click", onClick));
-  });
-
   const preview = root.querySelector<HTMLElement>("[data-index-preview]");
   const track = root.querySelector<HTMLElement>("[data-index-track]");
-  if (!fine || !preview || !track) return () => cleanups.forEach((fn) => fn());
+  if (!fine || !preview || !track) return () => {};
 
   root.classList.add("index-live");
   const images = [...track.querySelectorAll<HTMLImageElement>("[data-index-image]")];
@@ -109,12 +84,11 @@ export function initWorksIndex(root: HTMLElement, fine: boolean): () => void {
   root.addEventListener("pointerleave", onLeave);
   // Прокрутка уводит строку из-под курсора — превью прячем, пока мышь не двинется.
   addEventListener("scroll", onLeave, { passive: true });
-  cleanups.push(() => {
+  return () => {
     root.removeEventListener("pointermove", onMove);
     root.removeEventListener("pointerleave", onLeave);
     removeEventListener("scroll", onLeave);
     root.classList.remove("index-live");
     gsap.set(preview, { clearProps: "all" });
-  });
-  return () => cleanups.forEach((fn) => fn());
+  };
 }
