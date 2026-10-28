@@ -93,7 +93,7 @@ export const works: Work[] = [
       { value: "94 из 100", label: "скорость в Google PageSpeed на телефоне", visual: { type: "ring", value: 94, max: 100 } },
       { value: "100 из 100", label: "доступность и SEO по той же проверке", visual: { type: "ring", value: 100, max: 100 } },
     ],
-    stack: ["Astro 7", "Vite 8", "TypeScript 6", "Tailwind CSS 4", "Canvas API", "PHP 8", "Telegram Bot API", "Яндекс Облако"],
+    stack: ["Astro 7", "Vite 8", "TypeScript 6", "Tailwind CSS 4", "Canvas API", "PHP 8", "DaData", "Telegram Bot API", "MAX Bot API", "Яндекс Облако", "Яндекс Метрика"],
     url: "https://mc-project.ru/",
     urlLabel: "mc-project.ru",
     screens: {
@@ -122,7 +122,7 @@ export const works: Work[] = [
       { value: "99 из 100", label: "скорость по оценке Google на компьютере", visual: { type: "ring", value: 99, max: 100 } },
       { value: "5", label: "целей в Яндекс Метрике — от звонка до построения маршрута" },
     ],
-    stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты", "2ГИС"],
+    stack: ["Astro 7", "Vite 8", "TypeScript 6", "Tailwind CSS 4", "Remotion", "Яндекс Карты", "2ГИС", "Яндекс Метрика"],
     url: "https://shinomontazh-narodnaya-55.ru/",
     urlLabel: "shinomontazh-narodnaya-55.ru",
     screens: {
@@ -151,7 +151,7 @@ export const works: Work[] = [
       { value: "6", label: "анимированных роликов к инструкции" },
       { value: "2 КБ", label: "своего JavaScript-кода — ничего лишнего" },
     ],
-    stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты", "2ГИС"],
+    stack: ["Astro 7", "Vite 8", "TypeScript 6", "Tailwind CSS 4", "Remotion", "Яндекс Карты", "2ГИС", "Яндекс Метрика"],
     url: "https://moyka-vitebskiy.ru/",
     urlLabel: "moyka-vitebskiy.ru",
     screens: { desktop: ["moyka-desktop"], mobile: "moyka-mobile" },

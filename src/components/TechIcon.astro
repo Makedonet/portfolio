@@ -3,16 +3,25 @@
 // цветах, встроенным SVG. Ищутся по названию без номера версии: «Astro 7» —
 // это Astro. Пути — Simple Icons 16.36 (CC0); кроме того, чего там нет:
 // Remotion — из их фирменного пакета (remotion-dev/remotion, packages/brand),
-// Яндекс Карты и Яндекс Облако — значки с их собственных сайтов. Вектора знака
-// 2ГИС в открытом доступе нет, поэтому он картинкой — значок с 2gis.ru
-// (assets/tech/2gis.png). Своего знака у Canvas API нет, это часть HTML5 —
-// поэтому у него знак HTML5.
+// Яндекс Карты, Яндекс Облако и Яндекс Метрика — значки с их собственных
+// сайтов. Вектора знаков 2ГИС и DaData в открытом доступе нет, поэтому они
+// картинкой — значки с 2gis.ru и dadata.ru (assets/tech/); MAX — тот же значок,
+// что в контактах. Своего знака у Canvas API нет, это часть HTML5 — поэтому у
+// него знак HTML5.
 // Ракета Astro — цвета текста: при наведении чип темнеет, и она светлеет
 // вместе с подписью. Буквы, что в знаке вырезаны (TS, CSS, JS, PHP, самолётик
 // Telegram), подложены своим цветом, чтобы не темнели вместе с чипом.
+import type { ImageMetadata } from "astro";
 import twoGis from "../assets/tech/2gis.png";
+import dadata from "../assets/tech/dadata.png";
+import max from "../assets/icons/max.png";
 
 type Logo = { viewBox: string; body: string };
+
+const raster = (image: ImageMetadata): Logo => ({
+  viewBox: "0 0 24 24",
+  body: `<image href="${image.src}" width="24" height="24"/>`,
+});
 
 const html5: Logo = {
   viewBox: "0 0 24 24",
@@ -90,9 +99,22 @@ const logos: Record<string, Logo> = {
       '<path fill="#FF4433" d="M8 1C4.6862 1 2 3.6862 2 7C2 8.6563 2.6711 10.156 3.7565 11.2417C4.8422 12.328 7.4 13.9 7.55 15.55C7.57249 15.7974 7.7516 16 8 16C8.2484 16 8.42751 15.7974 8.45 15.55C8.6 13.9 11.1578 12.328 12.2435 11.2417C13.3289 10.156 14 8.6563 14 7C14 3.6862 11.3138 1 8 1Z"/>' +
       '<circle cx="8" cy="7" r="2.1" fill="#fff"/>',
   },
-  "2ГИС": {
-    viewBox: "0 0 24 24",
-    body: `<image href="${twoGis.src}" width="24" height="24"/>`,
+  "2ГИС": raster(twoGis),
+  DaData: raster(dadata),
+  "MAX Bot API": raster(max),
+  "Яндекс Метрика": {
+    viewBox: "0 0 56 56",
+    body:
+      '<defs><linearGradient id="tech-metrika-a" x1="40.133" y1="40.602" x2="-6.067" y2="-23.798" gradientUnits="userSpaceOnUse"><stop stop-color="#4643B9"/><stop offset="1" stop-color="#1E8AFF"/></linearGradient>' +
+      '<linearGradient id="tech-metrika-b" x1="0" y1="35" x2="10.858" y2="58.167" gradientUnits="userSpaceOnUse"><stop offset="0.13" stop-color="#FF455C"/><stop offset="1" stop-color="#FF1139"/></linearGradient>' +
+      '<linearGradient id="tech-metrika-c" x1="17.5" y1="35" x2="2.914" y2="48.803" gradientUnits="userSpaceOnUse"><stop stop-color="#FF2D4C"/><stop offset="1" stop-color="#FF2D4C" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="tech-metrika-d" x1="146.65" y1="140.486" x2="159.612" y2="36.407" gradientUnits="userSpaceOnUse"><stop stop-color="#3C3BA0"/><stop offset="0.49" stop-color="#1E8AFF"/><stop offset="1" stop-color="#00B2FF"/></linearGradient>' +
+      '<linearGradient id="tech-metrika-e" x1="38.5" y1="2.879" x2="87.702" y2="28.702" gradientUnits="userSpaceOnUse"><stop stop-color="#FFEA1A"/><stop offset="1" stop-color="#FFB800"/></linearGradient></defs>' +
+      '<path fill="url(#tech-metrika-a)" d="M28 56.0024C43.464 56.0024 56 43.4664 56 28.0024C56 12.6506 43.6452 0.184479 28.3361 0.00439453H27.6639C12.3548 0.184479 0 12.6506 0 28.0024C0 43.4664 12.536 56.0024 28 56.0024Z"/>' +
+      '<path fill="url(#tech-metrika-b)" d="M0.881348 35H17.4997V53.9667C9.34844 50.6671 3.10458 43.6405 0.881348 35Z"/>' +
+      '<path fill="url(#tech-metrika-c)" d="M0.881348 35H17.4997V53.9667C9.34844 50.6671 3.10458 43.6405 0.881348 35Z"/>' +
+      '<path fill="url(#tech-metrika-d)" d="M17.5 53.9667V27.7667C17.5 24.173 17.5 22.3762 18.1867 21.0036C18.7907 19.7962 19.7544 18.8146 20.9399 18.1994C22.2875 17.5 24.0517 17.5 27.58 17.5H38.5V53.9667C35.3558 55.2394 31.9278 55.9576 28.3373 56H27.6627C24.0722 55.9576 20.6442 55.2394 17.5 53.9667Z"/>' +
+      '<path fill="url(#tech-metrika-e)" d="M38.5 53.9665V2.03711C48.7614 6.19082 56 16.251 56 28.0018C56 39.7526 48.7614 49.8128 38.5 53.9665Z"/>',
   },
   "Яндекс Облако": {
     viewBox: "0 0 32 32",
