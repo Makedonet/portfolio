@@ -198,7 +198,7 @@ export const demos: Demo[] = [
     id: "omega",
     title: "OMEGA",
     kind: "Лендинг детективного агентства",
-    summary: "Коммерческий проект 2024 года в демо-режиме. Весь сайт — один HTML-файл без сторонних библиотек.",
+    summary: "Коммерческий проект 2024 года в демо-режиме. Написан вручную, без нейросетей, — ещё до их бума. Весь сайт — один HTML-файл без сторонних библиотек.",
     url: "https://omegadet.vercel.app/",
     urlLabel: "omegadet.vercel.app",
     code: "https://github.com/Makedonet/Omega",
