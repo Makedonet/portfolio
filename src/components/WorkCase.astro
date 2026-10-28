@@ -3,6 +3,7 @@
 // с телефоном, справа история. Название и отрасль — в шапке страницы.
 import LiveWindow from "./LiveWindow.astro";
 import Icon from "./Icon.astro";
+import TechIcon from "./TechIcon.astro";
 import MetricValue from "./MetricValue.astro";
 import MetricCard from "./MetricCard.astro";
 import type { Work } from "../data/works";
@@ -115,7 +116,14 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
 
     <h2 class="case-label" data-fade>На чём сделан</h2>
     <ul class="mt-3 flex flex-wrap gap-1.5" data-stagger>
-      {work.stack.map((tech) => <li class="chip rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-2">{tech}</li>)}
+      {
+        work.stack.map((tech) => (
+          <li class="chip flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-2">
+            <TechIcon name={tech} />
+            {tech}
+          </li>
+        ))
+      }
     </ul>
 
     <a
