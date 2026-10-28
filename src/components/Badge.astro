@@ -94,6 +94,12 @@ const photoImage = await variants(mountains, [320, 480, 640]);
       </span>
     </span>
   </div>
+  <div class="sticker sticker-code" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -5deg">
+    <svg viewBox="0 0 24 24" class="code-mark" aria-hidden="true" focusable="false">
+      <path d="M8.5 7 3.5 12l5 5m7-10 5 5-5 5M13.5 4.5l-3 15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    <span class="code-label"><b>чистый код</b><br />без конструкторов<br />и&nbsp;шаблонов</span>
+  </div>
   <div class="sticker sticker-tg hidden sm:flex" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -6deg">
     <svg viewBox="0 0 24 24" class="tg-plane" aria-hidden="true" focusable="false">
       <path d="M21.5 4.3 2.9 11.5c-1.3.5-1.3 1.2-.2 1.6l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.9-1.4-1.6Z" fill="currentColor"></path>
@@ -205,12 +211,13 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   .badge-stage {
     --rest: 84px;
     position: relative;
-    height: calc(var(--rest) + 33em);
+    height: calc(var(--rest) + 36em);
     font-size: 13px;
     pointer-events: none;
   }
   @media (min-width: 640px) {
     .badge-stage {
+      height: calc(var(--rest) + 33em);
       font-size: 14px;
     }
   }
@@ -658,6 +665,35 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     width: 1.05em;
     height: 1.05em;
   }
+  /* На телефоне сверху тесно — наклейка про код встаёт ниже визитки,
+     поэтому сцена там на 3em выше. */
+  .sticker-code {
+    left: 1%;
+    bottom: 0.2em;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.6em 0.95em 0.6em 0.6em;
+    border-radius: 1em;
+    background: var(--color-ink);
+    color: var(--color-muted-dark);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .sticker-code b {
+    font-weight: 700;
+    color: var(--color-paper);
+  }
+  .code-mark {
+    flex: none;
+    width: 2.6em;
+    height: 2.6em;
+    padding: 0.45em;
+    border-radius: 0.6em;
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
   .sticker-tg {
     right: 0.5em;
     bottom: 3.5em;
@@ -693,6 +729,11 @@ const photoImage = await variants(mountains, [320, 480, 640]);
       right: 7%;
       bottom: 6em;
     }
+    .sticker-code {
+      left: 6%;
+      top: 2.6em;
+      bottom: auto;
+    }
   }
   @media (min-width: 1024px) {
     .sticker-seal {
@@ -707,6 +748,10 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     .sticker-tg {
       right: -2.75em;
       bottom: 1.6em;
+    }
+    .sticker-code {
+      left: 0.5em;
+      top: 4.6em;
     }
   }
 
