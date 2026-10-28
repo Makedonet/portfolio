@@ -122,7 +122,7 @@ export const works: Work[] = [
       { value: "99 из 100", label: "скорость по оценке Google на компьютере", visual: { type: "ring", value: 99, max: 100 } },
       { value: "5", label: "целей в Яндекс Метрике — от звонка до построения маршрута" },
     ],
-    stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты"],
+    stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты", "2ГИС"],
     url: "https://shinomontazh-narodnaya-55.ru/",
     urlLabel: "shinomontazh-narodnaya-55.ru",
     screens: {
@@ -151,7 +151,7 @@ export const works: Work[] = [
       { value: "6", label: "анимированных роликов к инструкции" },
       { value: "2 КБ", label: "своего JavaScript-кода — ничего лишнего" },
     ],
-    stack: ["Astro", "Tailwind CSS", "TypeScript"],
+    stack: ["Astro", "Tailwind CSS", "TypeScript", "Remotion", "Яндекс Карты", "2ГИС"],
     url: "https://moyka-vitebskiy.ru/",
     urlLabel: "moyka-vitebskiy.ru",
     screens: { desktop: ["moyka-desktop"], mobile: "moyka-mobile" },
