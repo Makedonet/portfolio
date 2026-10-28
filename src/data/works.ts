@@ -208,7 +208,7 @@ export const demos: Demo[] = [
     id: "peribaca",
     title: "PERIBACA",
     kind: "Лендинг туров по Каппадокии",
-    summary: "Учебный макет 2021 года, заново свёрстанный с нуля: девять экранов, галерея и форма заявки.",
+    summary: "Учебный макет 2021 года, заново нарисованный и свёрстанный: тёплые цвета Каппадокии, маршруты разложены по высотам — от воздушного шара до подземного города.",
     url: "https://peribaca.vercel.app/",
     urlLabel: "peribaca.vercel.app",
     code: "https://github.com/Makedonet/Cappadocia",
