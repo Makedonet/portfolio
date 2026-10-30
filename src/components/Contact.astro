@@ -22,7 +22,7 @@ const max = contact("max");
   <div class="contact-glow" aria-hidden="true" data-contact-glow></div>
   <div class="container-page grid gap-14 py-20 sm:py-28 lg:grid-cols-12 lg:gap-10">
     <div class="lg:col-span-7">
-      <h2 id="contact-title" class="text-4xl leading-[1.05] font-bold tracking-[-0.035em] text-balance sm:text-6xl" data-split>
+      <h2 id="contact-title" class="font-display text-[3.25rem] leading-none font-bold text-balance sm:text-[5.5rem]" data-split>
         Обсудим ваш сайт
       </h2>
       <p
@@ -53,9 +53,9 @@ const max = contact("max");
         <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
           <a
             href={phone.href}
-            class="group inline-block font-mono text-[1.75rem] leading-tight font-semibold tracking-tight whitespace-nowrap text-paper sm:text-4xl lg:text-[2rem] xl:text-4xl"
+            class="group inline-block font-display text-[2.75rem] leading-tight font-bold whitespace-nowrap text-paper sm:text-[3.25rem] lg:text-5xl xl:text-[3.25rem]"
           >
-            <span class="link-line link-line-dark">{phone.display}</span>
+            <span class="link-line link-line-dark phone-number">{phone.display}</span>
           </a>
           {/* На компьютере tel: никуда не звонит — номер удобнее скопировать. */}
           <button

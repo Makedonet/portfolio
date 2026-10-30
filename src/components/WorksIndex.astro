@@ -110,7 +110,6 @@ const rows = await Promise.all(
   }
   .index-num {
     grid-area: meta;
-    font-family: var(--font-mono);
     font-size: 0.8125rem;
     color: var(--color-muted);
   }
@@ -125,10 +124,10 @@ const rows = await Promise.all(
   }
   .index-name {
     grid-area: name;
-    font-size: 1.125rem;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.05;
   }
   .index-industry {
     grid-area: meta;
@@ -165,7 +164,7 @@ const rows = await Promise.all(
       display: grid;
       padding-block: 1.25rem 0.75rem;
       border-bottom: 1px solid var(--color-line);
-      font: 500 0.75rem/1.2 var(--font-mono);
+      font: 500 0.8125rem/1.2 var(--font-sans);
       color: var(--color-muted);
     }
     .index-head span:first-child {
@@ -178,7 +177,7 @@ const rows = await Promise.all(
       display: none;
     }
     .index-name {
-      font-size: clamp(1.375rem, 2.1vw, 1.875rem);
+      font-size: clamp(2rem, 3.1vw, 2.75rem);
       transition: translate 0.5s var(--ease-out-expo);
     }
     .index-industry {
@@ -255,6 +254,6 @@ const rows = await Promise.all(
     border-radius: 999px;
     background: var(--color-ink);
     color: var(--color-paper);
-    font: 500 0.75rem/1.2 var(--font-mono);
+    font: 500 0.8125rem/1.2 var(--font-sans);
   }
 </style>

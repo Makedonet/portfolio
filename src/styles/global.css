@@ -23,8 +23,8 @@
   --color-ok: #1f9d55;
   --color-ok-text: #13753d;
 
-  --font-sans: var(--font-onest);
-  --font-mono: var(--font-jetbrains);
+  --font-sans: var(--font-sofia);
+  --font-display: var(--font-sofia-condensed);
 
   --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -393,10 +393,10 @@
     gap: 0.75rem;
   }
   .metric-value {
-    font-family: var(--font-mono);
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
     white-space: nowrap;
   }
   .metric-ring {
@@ -431,7 +431,7 @@
     color: var(--color-muted);
   }
   .bar-figure {
-    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     color: var(--color-ink-2);
     text-align: right;
     white-space: nowrap;
@@ -459,10 +459,12 @@
      линию, поверх неё — лента 0–9, сдвинутая до нужной цифры. Обрезка —
      clip-path, а не overflow: с overflow базовой линией разряда стал бы его
      нижний край, и цифры встали бы выше соседнего текста. */
+  /* Ширина ячейки — по итоговой цифре, а цифры шрифта разной ширины: барабан
+     режем только сверху и снизу, иначе у узкой 1 обрезались бы бока соседних. */
   .odo-d {
     position: relative;
     display: inline-block;
-    clip-path: inset(0);
+    clip-path: inset(0 -0.2em);
   }
   .odo-ghost {
     visibility: hidden;
@@ -611,9 +613,12 @@
   }
 
   /* Абзац подхода: пока слово не «прочитано», видна только его обводка
-     (заливку ведёт motion.ts). */
+     (заливку ведёт motion.ts). В вариативном шрифте контуры букв накладываются
+     друг на друга, поэтому обводка под заливкой: иначе внутри «д» и «ц» видны
+     лишние линии. */
   .manifesto-word {
-    -webkit-text-stroke: 1.25px var(--color-ink);
+    -webkit-text-stroke: 2px var(--color-ink);
+    paint-order: stroke fill;
   }
 
   /* Контакты: мягкое жёлтое пятно за курсором (motion.ts двигает его и
@@ -644,10 +649,10 @@
     overflow: hidden;
     padding-top: clamp(3.5rem, 9vw, 7rem);
     padding-bottom: 0.04em;
-    font-size: min(17vw, 15.5rem);
+    font-family: var(--font-display);
+    font-size: min(31vw, 29rem);
     font-weight: 300;
     line-height: 0.82;
-    letter-spacing: -0.03em;
     -webkit-user-select: none;
     user-select: none;
   }
@@ -668,7 +673,7 @@
     border-radius: 999px;
     background: var(--color-ink);
     color: var(--color-paper);
-    font: 500 0.75rem/1.25 var(--font-mono);
+    font: 500 0.8125rem/1.25 var(--font-sans);
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
@@ -704,6 +709,11 @@
   }
   .motion-on [data-live-toggle] {
     display: grid;
+  }
+
+  /* У единицы в этом шрифте почти нет полей: без запаса «981 105» слипается. */
+  .phone-number {
+    word-spacing: 0.14em;
   }
 
   /* Маркер под словом: заливка проводится слева направо после появления

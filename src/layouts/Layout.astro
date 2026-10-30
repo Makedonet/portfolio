@@ -75,11 +75,10 @@ const structuredData = {
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    {/* Onest стоит на заголовке первого экрана — грузим заранее. Моноширинный
-        нужен только подписям: его не предзагружаем, чтобы не делил канал с
-        основным шрифтом. */}
-    <Font cssVariable="--font-onest" preload />
-    <Font cssVariable="--font-jetbrains" />
+    {/* Оба шрифта стоят на первом экране и весят мало — грузим заранее: иначе
+        заголовок перерисуется, когда шрифт приедет. */}
+    <Font cssVariable="--font-sofia" preload />
+    <Font cssVariable="--font-sofia-condensed" preload />
 
     {!noindex && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}
 

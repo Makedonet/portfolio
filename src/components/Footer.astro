@@ -9,7 +9,7 @@ const year = new Date().getFullYear();
 <footer class="on-dark bg-ink text-paper">
   <div class="container-page">
     {/* Имя во всю ширину: буквы поднимаются при появлении и «набирают вес»
-        рядом с курсором — у Onest вариативная насыщенность (motion.ts). */}
+        рядом с курсором — у шрифта вариативная насыщенность (motion.ts). */}
     <p class="footer-name" aria-hidden="true" data-footer-name>
       {[...site.name.toUpperCase()].map((letter) => <span class="footer-letter">{letter}</span>)}
     </p>

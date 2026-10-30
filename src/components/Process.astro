@@ -28,14 +28,14 @@ import { typo } from "../lib/typo";
           steps.map((step, i) => (
             <li class="grid grid-cols-[2.25rem_1fr] gap-x-5 lg:block" data-step>
               <span
-                class="step-dot grid size-[2.25rem] place-items-center rounded-full border border-line bg-paper font-mono text-sm font-semibold text-ink"
+                class="step-dot grid size-[2.25rem] place-items-center rounded-full border border-line bg-paper text-sm font-semibold text-ink"
                 aria-hidden="true"
                 data-step-dot
               >
                 {i + 1}
               </span>
               <div class="lg:mt-6">
-                <h3 class="text-lg font-semibold tracking-[-0.01em]">
+                <h3 class="font-display text-[1.75rem] leading-tight font-bold">
                   <span class="sr-only">Шаг {i + 1}. </span>
                   {step.title}
                 </h3>

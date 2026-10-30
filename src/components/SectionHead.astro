@@ -11,6 +11,6 @@ const { id, title, intro } = Astro.props;
 ---
 
 <div class="grid gap-6 lg:grid-cols-12 lg:items-end">
-  <h2 id={id} class="text-4xl leading-[1.08] font-bold tracking-[-0.03em] text-balance sm:text-5xl lg:col-span-7" data-split set:html={typo(title)} />
+  <h2 id={id} class="font-display text-[3.25rem] leading-none font-bold text-balance sm:text-7xl lg:col-span-7" data-split set:html={typo(title)} />
   {intro && <p class="text-lg leading-relaxed text-ink-2 lg:col-span-5" data-fade set:html={typo(intro)} />}
 </div>

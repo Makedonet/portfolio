@@ -69,7 +69,7 @@ const n = String(index + 1).padStart(2, "0");
   <div class:list={[featured ? "lg:col-span-5" : "contents"]}>
     <div class:list={[!featured && "mt-6"]}>
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-fade>
-        <span class="font-mono text-[0.8125rem] text-muted">{n} · {work.industry}</span>
+        <span class="text-sm text-muted">{n} · {work.industry}</span>
         <span
           class:list={[
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
@@ -83,8 +83,8 @@ const n = String(index + 1).padStart(2, "0");
       <h3
         id={headingId}
         class:list={[
-          "mt-3 leading-tight font-bold text-balance",
-          featured ? "text-3xl tracking-[-0.025em] sm:text-[2.5rem]" : "text-2xl tracking-[-0.02em]",
+          "mt-3 font-display leading-[1.02] font-bold text-balance",
+          featured ? "text-[2.75rem] sm:text-[4rem]" : "text-[2.25rem]",
         ]}
         data-split
         set:html={typo(work.title)}
@@ -105,8 +105,8 @@ const n = String(index + 1).padStart(2, "0");
             <dt class:list={["order-2 text-sm leading-snug", featured ? "text-muted-dark" : "text-muted"]} set:html={typo(figure.label)} />
             <dd
               class:list={[
-                "order-1 font-mono leading-none font-semibold tracking-tight whitespace-nowrap",
-                featured ? "text-[2rem] text-accent sm:text-[2.5rem]" : "text-[1.625rem]",
+                "order-1 font-display leading-none font-bold whitespace-nowrap",
+                featured ? "text-[clamp(2.25rem,11vw,3rem)] text-accent sm:text-[3.75rem]" : "text-[2.5rem]",
               ]}
             >
               <MetricValue value={figure.value} />
@@ -135,7 +135,7 @@ const n = String(index + 1).padStart(2, "0");
       {
         featured && (
           <a href={work.url} target="_blank" rel="noopener noreferrer" class="group inline-flex min-h-11 items-center gap-2 text-muted hover:text-ink">
-            <span class="link-line font-mono text-sm">{work.urlLabel}</span>
+            <span class="link-line text-[0.9375rem]">{work.urlLabel}</span>
             <Icon name="arrow-up-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             <span class="sr-only">(откроется в новой вкладке)</span>
           </a>

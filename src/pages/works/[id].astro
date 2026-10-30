@@ -50,7 +50,7 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
         <span class="case-next-fill" aria-hidden="true"></span>
         <span class="container-page case-next-inner">
           <span class="case-next-text">
-            <span class="font-mono text-[0.8125rem] text-muted">Следующий кейс · {num(nextIndex)} · {next.industry}</span>
+            <span class="text-sm text-muted">Следующий кейс · {num(nextIndex)} · {next.industry}</span>
             <span class="case-next-title" set:html={typo(next.title)} />
             <span class="text-ink-2" set:html={typo(next.highlight)} />
           </span>
@@ -113,10 +113,10 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
     gap: 0.5rem;
   }
   .case-next-title {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7.5vw, 5.25rem);
     font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
+    line-height: 1;
     text-wrap: balance;
     transition: translate 0.5s var(--ease-out-expo);
   }

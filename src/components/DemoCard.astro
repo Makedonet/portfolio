@@ -33,7 +33,7 @@ const headingId = `demo-${demo.id}`;
     </div>
   </div>
   <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1" data-fade>
-    <h4 id={headingId} class="text-2xl font-bold tracking-[-0.02em]">{demo.title}</h4>
+    <h4 id={headingId} class="font-display text-[2.25rem] leading-none font-bold">{demo.title}</h4>
     <span class="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs font-medium text-muted">Демо</span>
   </div>
   <p class="mt-1 text-muted" data-fade set:html={typo(demo.kind)} />

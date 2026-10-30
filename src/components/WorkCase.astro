@@ -84,7 +84,7 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
             {work.result.figures.map((figure) => (
               <div class="flex flex-col gap-1.5">
                 <dt class="order-2 text-sm leading-snug text-muted-dark" set:html={typo(figure.label)} />
-                <dd class="order-1 font-mono text-[2rem] leading-none font-semibold tracking-tight whitespace-nowrap text-accent sm:text-[2.5rem]">
+                <dd class="order-1 font-display text-[clamp(2.25rem,11vw,3rem)] leading-none font-bold whitespace-nowrap text-accent sm:text-[3.75rem]">
                   <MetricValue value={figure.value} />
                 </dd>
               </div>
@@ -118,7 +118,7 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
     <ul class="mt-3 flex flex-wrap gap-1.5" data-stagger>
       {
         work.stack.map((tech) => (
-          <li class="chip flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-2">
+          <li class="chip flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 text-[0.8125rem] text-ink-2">
             <TechIcon name={tech} />
             {tech}
           </li>
@@ -134,7 +134,7 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
       data-fade
     >
       <span class="link-line">{work.status.tone === "concept" ? "Открыть концепт" : "Открыть сайт"}</span>
-      <span class="font-mono text-sm font-normal break-all text-muted">{work.urlLabel}</span>
+      <span class="text-sm font-normal break-all text-muted">{work.urlLabel}</span>
       <Icon name="arrow-up-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
       <span class="sr-only">(откроется в новой вкладке)</span>
     </a>

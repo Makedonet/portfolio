@@ -13,18 +13,6 @@ import { transformSync } from "esbuild";
 const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 const site = process.env.SITE_URL ?? (vercelUrl ? `https://${vercelUrl}` : "http://localhost:4321");
 
-// Шрифты — вариативные файлы из установленных пакетов @fontsource-variable:
-// они уезжают в сборку, посетитель не ходит ни к Google, ни к CDN. Латиница и
-// кириллица — отдельными файлами, браузер качает только нужный набор.
-/** @type {[string, ...string[]]} */
-const LATIN = [
-  "U+0000-00FF", "U+0131", "U+0152-0153", "U+02BB-02BC", "U+02C6", "U+02DA", "U+02DC",
-  "U+0304", "U+0308", "U+0329", "U+2000-206F", "U+20AC", "U+2122", "U+2191", "U+2193",
-  "U+2212", "U+2215", "U+FEFF", "U+FFFD",
-];
-/** @type {[string, ...string[]]} */
-const CYRILLIC = ["U+0301", "U+0400-045F", "U+0490-0491", "U+04B0-04B1", "U+2116"];
-
 // Комментарии в коде — рабочий контекст, но Astro не трогает тело
 // <script is:inline>, и в «исходном коде страницы» они лежали как есть. Эта
 // интеграция вычищает их из готовой сборки, как на сайтах шиномонтажа и мойки.
@@ -124,51 +112,24 @@ export default defineConfig({
 
   fonts: [
     {
-      // Onest — гротеск, нарисованный под кириллицу: им набрано всё.
+      // Текст, кнопки, подписи. Файлы лежат в проекте и обрезаны под сайт
+      // (tools/fonts.py), посетитель не ходит ни к Google, ни к CDN.
       provider: fontProviders.local(),
-      name: "Onest",
-      cssVariable: "--font-onest",
+      name: "Sofia Sans",
+      cssVariable: "--font-sofia",
       fallbacks: ["system-ui", "sans-serif"],
       options: {
-        variants: [
-          {
-            weight: "100 900",
-            style: "normal",
-            src: ["@fontsource-variable/onest/files/onest-latin-wght-normal.woff2"],
-            unicodeRange: LATIN,
-          },
-          {
-            weight: "100 900",
-            style: "normal",
-            src: ["@fontsource-variable/onest/files/onest-cyrillic-wght-normal.woff2"],
-            unicodeRange: CYRILLIC,
-          },
-        ],
+        variants: [{ weight: "400 800", style: "normal", src: ["./src/assets/fonts/sofia-sans.woff2"] }],
       },
     },
     {
-      // JetBrains Mono — только подписи и цифры. У него нет 900, отсюда 800.
-      // Фолбэки без Courier New: пока шрифт едет, мелькала бы печатная машинка.
+      // Заголовки и крупные цифры. Насыщенность от 300 нужна имени в подвале.
       provider: fontProviders.local(),
-      name: "JetBrains Mono",
-      cssVariable: "--font-jetbrains",
-      fallbacks: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
-      optimizedFallbacks: false,
+      name: "Sofia Sans Extra Condensed",
+      cssVariable: "--font-sofia-condensed",
+      fallbacks: ["system-ui", "sans-serif"],
       options: {
-        variants: [
-          {
-            weight: "100 800",
-            style: "normal",
-            src: ["@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2"],
-            unicodeRange: LATIN,
-          },
-          {
-            weight: "100 800",
-            style: "normal",
-            src: ["@fontsource-variable/jetbrains-mono/files/jetbrains-mono-cyrillic-wght-normal.woff2"],
-            unicodeRange: CYRILLIC,
-          },
-        ],
+        variants: [{ weight: "300 900", style: "normal", src: ["./src/assets/fonts/sofia-sans-extra-condensed.woff2"] }],
       },
     },
   ],

@@ -395,9 +395,11 @@ function manifesto(): Array<() => void> {
   const fill = () => {
     gsap.fromTo(
       words,
-      { color: "rgb(17 17 16 / 0)" },
+      // Начало — цвет бумаги, а не прозрачный: заливка закрывает внутренние
+      // линии обводки (global.css, .manifesto-word).
+      { color: "rgb(243 242 236)" },
       {
-        color: "rgb(17 17 16 / 1)",
+        color: "rgb(17 17 16)",
         ease: "none",
         stagger: 0.1,
         scrollTrigger: { trigger: el, start: "top 82%", end: "bottom 48%", scrub: 0.5 },
@@ -480,7 +482,7 @@ function footerName(fine: boolean): () => void {
     });
   };
   fix();
-  // Ширины по запасному шрифту не годятся — перемерить, когда приедет Onest.
+  // Ширины по запасному шрифту не годятся — перемерить, когда приедет шрифт.
   void document.fonts.ready.then(fix);
   gsap.from(letters, {
     yPercent: 105,

@@ -173,7 +173,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
             </div>
           </div>
           <div class="badge-call">
-            <a href={phone.href} class="badge-phone" data-cursor="">{phone.display}</a>
+            <a href={phone.href} class="badge-phone phone-number" data-cursor="">{phone.display}</a>
             <p class="badge-small">Звонок, WhatsApp или&nbsp;MAX</p>
           </div>
           <span class="badge-sheen" aria-hidden="true"></span>
@@ -254,7 +254,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   /* Мельче 12px шрифт не делаем нигде: это порог читаемости. */
   .strap-text {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.14em;
@@ -434,15 +434,14 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     color: var(--color-paper);
   }
   .badge-name {
-    font-size: 2.15em;
+    font-family: var(--font-display);
+    font-size: 3em;
     font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.035em;
+    line-height: 0.9;
   }
   .badge-role {
     margin-top: 0.6rem;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-muted-dark);
   }
   .badge-code {
@@ -497,8 +496,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     height: 100%;
   }
   .badge-small {
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.35;
     color: var(--color-muted-dark);
   }
@@ -529,10 +527,9 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   .badge-phone {
     display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 1.5em;
+    font-family: var(--font-display);
+    font-size: 2.1em;
     font-weight: 700;
-    letter-spacing: -0.02em;
     color: var(--color-paper);
     white-space: nowrap;
   }
@@ -612,7 +609,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     transform-origin: 60px 60px;
   }
   .seal-text {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -645,7 +642,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     height: 2.9em;
   }
   .score-value {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 700;
     fill: var(--color-ok-text);

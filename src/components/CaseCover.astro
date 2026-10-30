@@ -218,13 +218,13 @@ const spokes = [0, 72, 144, 216, 288];
         <Icon name="arrow-left" class="size-4 transition-transform duration-300 group-hover:-translate-x-1" />
         <span class="link-line link-line-dark">Все работы</span>
       </a>
-      <span class="cover-muted font-mono text-[0.8125rem]">Кейс {num(index)} из {String(total).padStart(2, "0")}</span>
+      <span class="cover-muted text-sm">Кейс {num(index)} из {String(total).padStart(2, "0")}</span>
     </div>
 
     <div class="mt-8 grid grid-cols-1 gap-6 sm:mt-12 lg:grid-cols-12 lg:items-end lg:gap-10">
       <div class="lg:col-span-8">
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span class="cover-muted font-mono text-[0.8125rem]">{work.industry}</span>
+          <span class="cover-muted text-sm">{work.industry}</span>
           <span class="inline-flex items-center gap-1.5 rounded-full border border-paper/20 bg-paper/10 px-2.5 py-0.5 text-xs font-medium text-paper">
             {work.status.tone === "live" && <span class="size-1.5 animate-pulse rounded-full bg-[#4ade80] motion-reduce:animate-none" aria-hidden="true" />}
             {work.status.label}
@@ -232,7 +232,7 @@ const spokes = [0, 72, 144, 216, 288];
         </div>
         <h1
           id="case-title"
-          class="mt-4 text-[clamp(2rem,10vw,2.5rem)] leading-[1.04] font-bold tracking-[-0.035em] text-balance text-paper sm:text-6xl xl:text-7xl"
+          class="mt-4 font-display text-[clamp(3rem,15vw,3.75rem)] leading-[0.98] font-bold text-balance text-paper sm:text-8xl xl:text-[7rem]"
           set:html={typo(work.title)}
         />
       </div>
@@ -359,7 +359,7 @@ const spokes = [0, 72, 144, 216, 288];
     fill: #00ff02;
   }
   .art-crack .ti-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
   }
 
   /* Тёмная карточка результата на странице — в тёмный цвет сайта. У
