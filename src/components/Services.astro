@@ -1,43 +1,54 @@
 ---
-import SectionHead from "./SectionHead.astro";
-import Icon from "./Icon.astro";
+import ServiceScene from "./ServiceScene.astro";
 import { services } from "../data/services";
 import { typo } from "../lib/typo";
 ---
 
 <section aria-labelledby="services-title" id="services" class="scroll-mt-16 overflow-x-clip bg-surface">
-  {/* На широком экране секция закрепляется, а карточки едут вбок, пока
-      страница листается вниз; полоса снизу — сколько проехали (motion.ts).
-      На телефоне, без скрипта и при «уменьшить движение» — обычная сетка.
-      Ячейка при наведении заливается жёлтым снизу (global.css, .service). */}
-  <div class="services-pin bg-surface py-20 sm:py-28" data-services>
-    <div class="container-page">
-      <SectionHead
-        id="services-title"
-        title="«Под ключ» - это всё, что нужно сайту"
-        intro="Не нужно искать отдельно дизайнера, верстальщика и специалиста, который «подключит формы». Один человек ведёт ваш сайт от первого звонка до запуска и после него."
+  {/* На широком экране секция закрепляется: слева список услуг, по нему идёт
+      маркер, справа снизу наезжают цветные листы со сценами (scripts/services.ts).
+      На телефоне, без скрипта и при «уменьшить движение» — та же разметка лентой
+      карточек, которую листают вбок. */}
+  <div class="services-pin" data-services>
+    <div class="services-head">
+      <h2 id="services-title" class="services-title font-display font-bold text-balance" data-split set:html={typo("«Под ключ» - это всё, что нужно сайту")} />
+      <p
+        class="services-intro leading-relaxed text-ink-2"
+        data-fade
+        set:html={typo("Не нужно искать отдельно дизайнера, верстальщика и специалиста, который «подключит формы». Один человек ведёт ваш сайт от первого звонка до запуска и после него.")}
       />
     </div>
 
-    <ul class="services-track mt-12 sm:mt-16" data-services-track data-stagger>
+    {/* Лента листается и с клавиатуры, поэтому в порядке Tab. */}
+    <ol class="services-track" tabindex="0" aria-label="Что входит в работу под ключ">
       {
         services.map((service, i) => (
-          <li class="service flex flex-col rounded-2xl border border-line bg-paper p-6 sm:p-7">
-            <div class="flex items-start justify-between gap-4">
-              <span class="text-sm text-muted" aria-hidden="true">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <Icon name="arrow-up-right" class="service-arrow size-5" />
+          <li class={`service tone-${service.tone}`} data-service>
+            <h3 class="service-name font-display font-bold" style={`--row:${i + 3}`}>
+              <span data-service-name>{service.title}</span>
+            </h3>
+            <div class="service-sheet" data-service-sheet>
+              <div class="service-stage">
+                <ServiceScene scene={service.scene} />
+              </div>
+              <p class="service-text leading-relaxed" set:html={typo(service.text)} />
             </div>
-            <h3 class="mt-10 font-display text-[2rem] leading-[1.05] font-bold sm:mt-14">{service.title}</h3>
-            <p class="mt-3 leading-relaxed text-ink-2" set:html={typo(service.text)} />
           </li>
         ))
       }
-    </ul>
-
-    <div class="services-progress container-page mt-10" aria-hidden="true">
-      <span class="block h-[2px] origin-left scale-x-0 bg-ink" data-services-progress></span>
-    </div>
+    </ol>
   </div>
+
+  {/* Буханка «Корки» из роликов «Как работаю», общая для сцен. */}
+  <svg class="hidden" aria-hidden="true">
+    <symbol id="sc-loaf" viewBox="-2 -2 204 204">
+      <circle cx="100" cy="100" r="100" fill="#e8983a" />
+      <circle cx="100" cy="100" r="82" fill="#f0aa52" />
+      <g fill="none" stroke="#ffe7c2" stroke-width="15" stroke-linecap="round">
+        <path d="M50 62Q78 100 50 138" />
+        <path d="M94 42Q122 100 94 158" />
+        <path d="M138 62Q166 100 138 138" />
+      </g>
+    </symbol>
+  </svg>
 </section>

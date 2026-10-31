@@ -22,6 +22,9 @@
   --color-accent: #ffd43b;
   --color-ok: #1f9d55;
   --color-ok-text: #13753d;
+  /* Цвета вымышленной пекарни «Корка» из роликов и сцен услуг, не сайта. */
+  --color-cobalt: #2340e8;
+  --color-tomato: #e23d1f;
 
   --font-sans: var(--font-sofia);
   --font-display: var(--font-sofia-condensed);
@@ -484,115 +487,753 @@
     border-radius: 0.75rem;
   }
 
-  /* Услуги: сетка карточек, на широком экране при движении — лента вбок
-     (motion.ts закрепляет секцию и двигает ленту). Отступ слева у ленты —
-     как у контейнера страницы, чтобы первая карточка стояла по сетке. */
-  .services-track {
+  /* Услуги. По умолчанию (телефон, без скрипта, «уменьшить движение») — лента
+     цветных карточек, которую листают вбок. На широком экране при движении —
+     закреплённый экран: список слева, стопка листов справа (scripts/services.ts).
+     Размеры заголовка заданы здесь, а не утилитами: утилиты Tailwind сильнее
+     слоя components и перебили бы размеры закреплённого экрана. */
+  .services-pin {
+    padding-block: 5rem;
+  }
+  .services-head {
     display: grid;
-    gap: 0.75rem;
+    gap: 1.5rem;
     max-width: 78rem;
     margin-inline: auto;
     padding-inline: 1.25rem;
   }
-  @media (min-width: 640px) {
-    .services-track {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .services-title {
+    font-size: 3.25rem;
+    line-height: 1;
   }
-  @media (min-width: 768px) {
-    .services-track {
-      padding-inline: 2rem;
-    }
+  .services-intro {
+    font-size: 1.125rem;
   }
-  @media (min-width: 1024px) {
-    .services-track {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-    }
-    .motion-on .services-pin {
-      display: flex;
-      min-height: 100vh;
-      flex-direction: column;
-      justify-content: center;
-      padding-block: 4.5rem;
-    }
-    .motion-on .services-track {
-      display: flex;
-      width: max-content;
-      max-width: none;
-      margin-inline: 0;
-      padding-inline: max(2rem, calc((100% - 78rem) / 2 + 2rem));
-    }
-    .motion-on .services-track > li {
-      flex: none;
-      width: 23rem;
-      min-height: 20rem;
-    }
+  .services-track {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+    padding-inline: max(1.25rem, calc((100% - 78rem) / 2 + 1.25rem));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: max(1.25rem, calc((100% - 78rem) / 2 + 1.25rem));
+    scrollbar-width: none;
   }
-  .services-progress {
+  .services-track::-webkit-scrollbar {
     display: none;
   }
-  @media (min-width: 1024px) {
-    .motion-on .services-progress {
-      display: block;
+  .service {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: min(84vw, 25rem);
+    padding: 1.25rem;
+    border-radius: 1rem;
+    scroll-snap-align: start;
+    background: var(--sheet);
+    color: var(--sheet-ink);
+  }
+  .service-name {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+  .service-stage {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    margin-top: 1rem;
+    container-type: size;
+  }
+  .service-text {
+    margin-top: 1rem;
+  }
+  .tone-paper {
+    --sheet: var(--color-paper);
+    --sheet-ink: var(--color-ink);
+  }
+  .tone-ink {
+    --sheet: var(--color-ink);
+    --sheet-ink: var(--color-paper);
+  }
+  .tone-accent {
+    --sheet: var(--color-accent);
+    --sheet-ink: var(--color-ink);
+  }
+  .tone-cobalt {
+    --sheet: var(--color-cobalt);
+    --sheet-ink: var(--color-paper);
+  }
+  @media (min-width: 768px) {
+    .services-pin {
+      padding-block: 7rem;
+    }
+    .services-head {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: end;
+      padding-inline: 2rem;
+    }
+    .services-title {
+      grid-column: span 7;
+      font-size: 4.5rem;
+    }
+    .services-intro {
+      grid-column: span 5;
+    }
+    .services-track {
+      margin-top: 4rem;
+      padding-inline: max(2rem, calc((100% - 78rem) / 2 + 2rem));
+      scroll-padding-inline: max(2rem, calc((100% - 78rem) / 2 + 2rem));
     }
   }
 
-  /* Услуги: жёлтая заливка поднимается снизу, заголовок сдвигается. */
-  .service {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
+  /* Закреплённый экран. Левая колонка — заголовок и названия услуг по строкам,
+     правая — листы, все в одной ячейке на всю высоту и до края окна. Списки
+     растворены (display: contents), чтобы названия и листы встали в одну сетку,
+     а порядок чтения остался прежним: название, потом его текст. Размеры левой
+     колонки зависят и от высоты окна: девять строк должны влезать в ноутбук. */
+  @media (min-width: 1024px) {
+    .motion-on .services-pin {
+      display: grid;
+      height: 100vh;
+      padding-block: 0;
+      overflow: hidden;
+      grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+      grid-template-rows: minmax(5.5rem, 1fr) auto repeat(9, auto) minmax(1.5rem, 1fr);
+    }
+    .motion-on .services-head {
+      grid-column: 1;
+      grid-row: 2;
+      display: block;
+      max-width: none;
+      margin: 0 0 clamp(0.75rem, 2.6vh, 1.75rem);
+      padding: 0 2.5rem 0 max(2rem, calc((100vw - 78rem) / 2 + 2rem));
+    }
+    .motion-on .services-title {
+      font-size: clamp(2.5rem, 7.4vh, 4.5rem);
+    }
+    .motion-on .services-intro {
+      margin-top: clamp(0.5rem, 1.6vh, 1rem);
+      font-size: clamp(0.9375rem, 2.1vh, 1.0625rem);
+      line-height: 1.5;
+      color: var(--color-muted);
+    }
+    .motion-on .services-track,
+    .motion-on .service {
+      display: contents;
+    }
+    .motion-on .service-name {
+      grid-column: 1;
+      grid-row: var(--row);
+      padding-left: max(2rem, calc((100vw - 78rem) / 2 + 2rem));
+      font-size: clamp(1.625rem, 5.1vh, 3rem);
+      font-weight: 400;
+      line-height: 1.14;
+      color: var(--color-muted);
+      transition:
+        color 0.25s var(--ease-out),
+        translate 0.45s var(--ease-out-expo);
+    }
+    .motion-on .service-name.is-active {
+      font-weight: 800;
+      color: var(--color-ink);
+      translate: 0.5rem 0;
+    }
+    .motion-on .service-name.is-done {
+      color: var(--color-ink);
+    }
+    /* Маркер идёт за прокруткой (services.ts) и остаётся: к концу отмечен весь
+       список. Пройденные названия — чернилами: серый на жёлтом не читается. */
+    .motion-on [data-service-name] {
+      background-image: linear-gradient(var(--color-accent), var(--color-accent));
+      background-repeat: no-repeat;
+      background-position: 0 82%;
+      background-size: 100% 0.42em;
+    }
+    .service-jump {
+      display: inline;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+    }
+    .service-jump:hover {
+      color: var(--color-ink);
+    }
+    .motion-on .service-sheet {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 5.5rem clamp(2rem, 4vw, 4.5rem) clamp(1.5rem, 4vh, 2.75rem);
+      background: var(--sheet);
+      color: var(--sheet-ink);
+    }
+    .motion-on .service-stage {
+      flex: 1;
+      min-height: 0;
+      margin: 0;
+      aspect-ratio: auto;
+    }
+    .motion-on .service-text {
+      max-width: 38rem;
+      margin-top: clamp(0.75rem, 2.4vh, 1.5rem);
+      font-size: clamp(1rem, 2.3vh, 1.125rem);
+    }
   }
-  .service::before {
-    content: "";
+
+  /* Сцены: холст 33.3×25 em, всё внутри — в em от его ширины. */
+  .scene {
+    position: relative;
+    width: min(100cqw, 133.33cqh);
+    aspect-ratio: 4 / 3;
+    container-type: inline-size;
+  }
+  .scene-canvas {
     position: absolute;
     inset: 0;
-    z-index: -1;
+    font-size: 3cqw;
+    line-height: 1.3;
+  }
+  .sc-type {
+    display: inline-block;
+  }
+  .sc-site-title,
+  .sc-address,
+  .sc-gauge-number,
+  .sc-plain,
+  .sc-status,
+  .sc-snippet-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Тексты: лист, вода зачёркнута, под ней - по делу. */
+  .sc-sheet {
+    position: absolute;
+    inset: 2em 2.5em;
+    padding: 2em 2.2em;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    rotate: -1.5deg;
+    box-shadow: 0 1.2em 2.4em -1.2em rgb(17 17 16 / 0.3);
+  }
+  .sc-water {
+    font-size: 1.32em;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+  .sc-strike {
+    display: table;
+    opacity: 0.45;
+    background: linear-gradient(var(--color-tomato), var(--color-tomato)) no-repeat 0 58% / 100% 0.12em;
+  }
+  .sc-plain {
+    margin-top: 1.1em;
+  }
+  .sc-mask {
+    display: block;
+    overflow: clip;
+    padding-block: 0.06em 0.12em;
+    font-size: 4.6em;
+  }
+  .sc-mask-small {
+    margin-top: 0.12em;
+    font-size: 2.3em;
+    font-weight: 600;
+  }
+  .sc-line {
+    display: block;
+  }
+  .sc-mark {
+    background: linear-gradient(var(--color-accent), var(--color-accent)) no-repeat 0 88% / 100% 0.42em;
+  }
+
+  /* Дизайн: одна страница в трёх ширинах. Раскладку переключает data-w. */
+  .sc-device {
+    position: absolute;
+    top: 0.6em;
+    left: 50%;
+    width: 10.5em;
+    height: 20.6em;
+    overflow: hidden;
+    translate: -50% 0;
+    border-radius: 0.9em;
+    background: var(--color-cobalt);
+    outline: 0.28em solid var(--color-paper);
+  }
+  .sc-device-bar {
+    height: 1.7em;
+    font-size: 0.9em;
+    line-height: 1.7em;
+    text-align: center;
+    color: var(--color-muted);
+    background: var(--color-paper);
+  }
+  .sc-site {
+    padding: 1.2em;
+    color: var(--color-paper);
+  }
+  .sc-site-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  .sc-site-title {
+    font-size: 3.4em;
+  }
+  .sc-site-btn {
+    display: inline-block;
+    margin-top: 0.7em;
+    padding: 0.3em 1em;
+    border-radius: 2em;
+    font-weight: 700;
+    color: var(--color-cobalt);
+    background: var(--color-paper);
+  }
+  .sc-site-loaf {
+    flex: none;
+    width: 7.6em;
+    height: 7.6em;
+  }
+  .sc-site-tiles {
+    display: grid;
+    gap: 0.6em;
+    margin-top: 1em;
+  }
+  .sc-site-tiles span {
+    height: 3.6em;
+    border-radius: 0.5em;
+    background: var(--color-paper);
+  }
+  .sc-device[data-w="m"] .sc-site-hero,
+  .sc-device[data-w="l"] .sc-site-hero {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sc-device[data-w="l"] .sc-site-title {
+    font-size: 4.6em;
+  }
+  .sc-device[data-w="m"] .sc-site-loaf {
+    width: 6em;
+    height: 6em;
+  }
+  .sc-device[data-w="l"] .sc-site-loaf {
+    width: 9em;
+    height: 9em;
+  }
+  .sc-device[data-w="m"] .sc-site-tiles,
+  .sc-device[data-w="l"] .sc-site-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sc-sizes {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.4em;
+    font-size: 1.1em;
+    color: var(--color-muted-dark);
+  }
+  .sc-sizes .is-on {
+    color: var(--color-accent);
+  }
+
+  /* Разработка: кольцо оценки, как в кейсах, только во весь лист. */
+  .sc-gauge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24em;
+    height: 24em;
+    translate: -50% -50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .sc-gauge svg {
+    position: absolute;
+    inset: 0;
+    rotate: -90deg;
+    fill: none;
+    stroke-width: 5;
+  }
+  .sc-gauge-track {
+    stroke: rgb(17 17 16 / 0.14);
+  }
+  .sc-gauge-value {
+    stroke: var(--color-ink);
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+  }
+  .sc-gauge-number {
+    font-size: 10.5em;
+    font-variant-numeric: tabular-nums;
+    line-height: 0.9;
+  }
+  .sc-gauge-label {
+    font-size: 1.1em;
+    line-height: 1.3;
+  }
+
+  /* Заявки: форма и сообщение, в которое она превратилась. */
+  .sc-form {
+    position: absolute;
+    top: 0.5em;
+    left: 1em;
+    width: 21em;
+    padding: 1.5em;
+    border-radius: 1em;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: 0 1.2em 2.4em -1.2em rgb(17 17 16 / 0.3);
+  }
+  .sc-field {
+    display: block;
+    margin-bottom: 0.55em;
+    padding: 0.5em 0.8em;
+    border: 0.08em solid var(--color-line);
+    border-radius: 0.5em;
+    font-size: 1.15em;
+    min-height: 3.1em;
+  }
+  .sc-field-label {
+    display: block;
+    font-size: 0.72em;
+    color: var(--color-muted);
+  }
+  .sc-consent {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    color: var(--color-ink-2);
+  }
+  .sc-box {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 0.3em;
+    background: var(--color-cobalt);
+  }
+  .sc-box svg,
+  .sc-check svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sc-box svg {
+    width: 1.1em;
+    height: 1.1em;
+    color: var(--color-paper);
+  }
+  .sc-submit {
+    margin-top: 1em;
+    padding: 0.6em;
+    border-radius: 0.6em;
+    font-size: 1.2em;
+    font-weight: 700;
+    text-align: center;
+    color: var(--color-paper);
+    background: var(--color-cobalt);
+  }
+  .sc-message {
+    position: absolute;
+    right: 0.5em;
+    bottom: -0.4em;
+    width: 17em;
+    padding: 1.2em 1.4em;
+    border-radius: 1.2em 1.2em 0.2em 1.2em;
+    font-size: 1.05em;
+    color: var(--color-paper);
+    background: var(--color-ink);
+    rotate: -2deg;
+  }
+  .sc-message-title {
+    font-family: var(--font-display);
+    font-size: 2.1em;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-accent);
+  }
+  .sc-message-to {
+    margin-top: 0.3em;
+    font-size: 0.85em;
+    color: var(--color-muted-dark);
+  }
+
+  /* Аналитика: строка в поиске обрастает сведениями, столбики растут. */
+  .sc-snippet {
+    position: absolute;
+    inset: 0.5em 0.5em auto;
+    padding: 1.3em 1.5em;
+    border-radius: 0.9em;
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  .sc-snippet-title {
+    font-size: 2.8em;
+    color: var(--color-cobalt);
+  }
+  .sc-snippet-url {
+    margin-top: 0.2em;
+    font-size: 1.05em;
+    color: var(--color-ok-text);
+  }
+  .sc-rich {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    margin-top: 0.7em;
+  }
+  .sc-rich span {
+    padding: 0.15em 0.6em;
+    border-radius: 2em;
+    font-size: 0.95em;
+    background: var(--color-paper);
+  }
+  .sc-chart {
+    position: absolute;
+    inset: 11.5em 0.5em 0.5em;
+    display: flex;
+    flex-direction: column;
+  }
+  .sc-chart-label {
+    font-size: 1.1em;
+    color: var(--color-muted-dark);
+  }
+  .sc-bars {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    gap: 0.7em;
+    margin-top: 0.6em;
+    min-height: 0;
+  }
+  .sc-bars span {
+    flex: 1;
+    border-radius: 0.3em 0.3em 0 0;
     background: var(--color-accent);
-    transform: scaleY(0);
-    transform-origin: bottom;
-    transition: transform 0.55s var(--ease-out-expo);
   }
-  .service:hover::before {
-    transform: scaleY(1);
+
+  /* Запуск: замок, адрес, проверка на устройствах. */
+  .sc-lock {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 9em;
+    height: 11.25em;
+    translate: -50% 0;
+    overflow: visible;
+    fill: var(--color-ink);
   }
-  /* Блик под курсором: точку ставит motion.ts (--gx/--gy), он же наклоняет
-     карточку. */
-  @media (hover: hover) {
-    .service::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background: radial-gradient(circle 11rem at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / 0.6), transparent);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s var(--ease-out);
-    }
-    .service:hover::after {
-      opacity: 1;
-    }
+  .sc-shackle {
+    fill: none;
+    stroke: var(--color-ink);
+    stroke-width: 12;
+    stroke-linecap: round;
   }
-  .service:hover {
-    border-color: var(--color-accent);
+  .sc-keyhole {
+    fill: var(--color-accent);
   }
-  .service h3 {
-    transition: translate 0.45s var(--ease-out-expo);
+  .sc-address {
+    position: absolute;
+    inset: 11.6em 0 auto;
+    font-size: 1em;
+    text-align: center;
   }
-  .service:hover h3 {
-    translate: 0.4rem 0;
+  .sc-address .sc-type {
+    font-size: 7.4em;
+    line-height: 1;
   }
-  .service-arrow {
+  .sc-checks {
+    position: absolute;
+    inset: auto 0 0.4em;
+    display: flex;
+    justify-content: center;
+    gap: 1.4em;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+  .sc-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  .sc-check svg {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  /* Поддержка: линия работы сайта, сбой красным, предупреждение. */
+  .sc-status {
+    position: absolute;
+    top: 0.5em;
+    left: 0.5em;
+    display: grid;
+    font-size: 4em;
+    color: var(--color-paper);
+  }
+  .sc-status span {
+    grid-area: 1 / 1;
+  }
+  .sc-status-ok {
+    color: #4ade80;
+  }
+  .sc-status-down {
     opacity: 0;
-    translate: -0.5rem 0.5rem;
-    transition:
-      opacity 0.3s var(--ease-out),
-      translate 0.45s var(--ease-out-expo);
+    color: #ff6b4a;
   }
-  .service:hover .service-arrow {
-    opacity: 1;
-    translate: 0 0;
+  .sc-pulse {
+    position: absolute;
+    top: 7em;
+    left: 0;
+    width: 100%;
+    height: auto;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sc-pulse-track {
+    stroke: var(--color-line-dark);
+    stroke-width: 1;
+  }
+  .sc-pulse-ok {
+    stroke: #4ade80;
+  }
+  .sc-pulse-down {
+    stroke: #ff6b4a;
+  }
+  .sc-alert {
+    position: absolute;
+    right: 0.5em;
+    bottom: 0.3em;
+    width: 21em;
+    padding: 0.9em 1.3em;
+    border-radius: 1em 1em 0.2em 1em;
+    color: var(--color-ink);
+    background: var(--color-accent);
+  }
+  .sc-alert-title {
+    font-family: var(--font-display);
+    font-size: 2em;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  /* Редизайн: старый сайт, новый стирает его, адрес тот же. */
+  .sc-browser {
+    position: absolute;
+    inset: 0.5em;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0.9em;
+    background: var(--color-surface);
+    box-shadow: 0 1.2em 2.4em -1.2em rgb(17 17 16 / 0.35);
+  }
+  .sc-browser-bar {
+    flex: none;
+    padding: 0.5em;
+    font-size: 1.1em;
+    font-weight: 600;
+    text-align: center;
+    background: var(--color-line);
+  }
+  .sc-browser-page {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+  .sc-old {
+    position: absolute;
+    inset: 0;
+    padding: 1em;
+    font-family: "Times New Roman", Times, serif;
+    text-align: center;
+    color: #000;
+    background: #e8e0c8;
+  }
+  .sc-old-title {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #b00000;
+  }
+  .sc-old-menu {
+    margin-top: 0.5em;
+    font-size: 1.15em;
+    color: #0000c8;
+  }
+  .sc-old table {
+    width: 100%;
+    margin-top: 1em;
+    border: 0.15em outset #888;
+    font-size: 1.15em;
+  }
+  .sc-old td {
+    padding: 0.45em;
+    border: 0.08em inset #888;
+  }
+  .sc-old-note {
+    margin-top: 1em;
+    font-size: 0.95em;
+    color: #555;
+  }
+  .sc-new {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.6em;
+    color: var(--color-paper);
+    background: var(--color-cobalt);
+  }
+  .sc-new .sc-site-title {
+    font-size: 5em;
+  }
+  .sc-new .sc-site-loaf {
+    width: 11em;
+    height: 11em;
+  }
+  .sc-seam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    width: 0.3em;
+    margin-left: -0.15em;
+    opacity: 0;
+    background: var(--color-accent);
+  }
+
+  /* Анимация: упражнение «прыгающий мяч» со следами каждого кадра. */
+  .sc-floor {
+    position: absolute;
+    inset: auto 0 2.45em;
+    height: 0.14em;
+    background: var(--color-paper);
+  }
+  .sc-ghost,
+  .sc-ball {
+    position: absolute;
+    width: 5em;
+    height: 5em;
+  }
+  .sc-ghost {
+    border: 0.09em solid rgb(243 242 236 / 0.55);
+    border-radius: 50%;
+  }
+  .sc-ball {
+    left: 26.5em;
+    bottom: 2.5em;
   }
 
   /* Этапы: кружок загорается, когда до него дошла линия (motion.ts), и

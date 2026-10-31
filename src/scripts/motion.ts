@@ -14,8 +14,7 @@
 //   data-progress — полоса прочитанного в шапке;
 //   data-marquee — ленты крест-накрест, разгоняются от прокрутки;
 //   data-manifesto — абзац проявляется по словам вслед за прокруткой;
-//   data-services — лента услуг едет вбок, пока секция закреплена;
-//   .service — карточка услуги наклоняется к курсору, по ней бежит блик;
+//   data-services — услуги и их сцены (scripts/services.ts);
 //   data-contact-glow — пятно света за курсором в контактах;
 //   data-footer-name — имя в подвале, буквы набирают вес у курсора.
 // Визитка первого экрана, наклейки, подсказка у курсора и индекс работ —
@@ -27,6 +26,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { initLiveWindows } from "./live";
 import { initClips } from "./clips";
+import { initServices } from "./services";
 import { initBadge } from "./badge";
 import { initStickers } from "./stickers";
 import { initCursor } from "./cursor";
@@ -118,8 +118,7 @@ function fades(onScreen: Set<Element>): () => void {
     });
   hide(singles, 36);
   hide(items, 24);
-  // overwrite: "auto", а не true: true снял бы и чужие твины тех же
-  // элементов — наклон карточек услуг (quickTo) после появления замер бы.
+  // overwrite: "auto", а не true: true снял бы и чужие твины тех же элементов.
   const stops = [
     whenVisible(singles, (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, overwrite: "auto" }), 90),
     whenVisible(items, (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", stagger: 0.07, overwrite: "auto" })),
@@ -418,31 +417,6 @@ function manifesto(): Array<() => void> {
   return [split, fill, ...marks];
 }
 
-/** Услуги: на широком экране секция закреплена, лента карточек едет вбок. */
-function services() {
-  const root = document.querySelector<HTMLElement>("[data-services]");
-  const track = root?.querySelector<HTMLElement>("[data-services-track]");
-  const bar = root?.querySelector<HTMLElement>("[data-services-progress]");
-  if (!root || !track) return;
-  const mm = gsap.matchMedia();
-  mm.add("(min-width: 1024px)", () => {
-    const distance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: root,
-        start: "top top",
-        end: () => `+=${distance()}`,
-        pin: true,
-        scrub: 0.8,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-      },
-    });
-    tl.to(track, { x: () => -distance(), ease: "none" }, 0);
-    if (bar) tl.to(bar, { scaleX: 1, ease: "none" }, 0);
-  });
-}
-
 /** Контакты: тёмный блок раскрывается из скруглённой карточки во всю ширину. */
 function contactReveal() {
   const el = document.querySelector<HTMLElement>("#contact");
@@ -626,36 +600,6 @@ function hover(): () => void {
     });
   });
 
-  // Карточки услуг наклоняются к курсору, по ним бежит блик (--gx/--gy,
-  // global.css). Наклон — на самой карточке: появление при прокрутке
-  // двигает её y, а не поворот, и твины друг другу не мешают.
-  all(".service").forEach((card) => {
-    gsap.set(card, { transformPerspective: 900 });
-    const rx = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power3.out" });
-    const ry = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power3.out" });
-    const move = (e: PointerEvent) => {
-      const r = card.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      ry((px - 0.5) * 9);
-      rx((0.5 - py) * 9);
-      card.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
-      card.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
-    };
-    const leave = () => {
-      rx(0);
-      ry(0);
-    };
-    card.addEventListener("pointermove", move);
-    card.addEventListener("pointerleave", leave);
-    cleanups.push(() => {
-      card.removeEventListener("pointermove", move);
-      card.removeEventListener("pointerleave", leave);
-      card.style.removeProperty("--gx");
-      card.style.removeProperty("--gy");
-    });
-  });
-
   // Контакты: за курсором по тёмному блоку плывёт мягкое жёлтое пятно.
   // Прокрутка уносит блок из-под неподвижной мыши — пятно догоняет.
   const contact = document.querySelector<HTMLElement>("#contact");
@@ -725,9 +669,9 @@ export function init() {
             if (badge) stops.push(initBadge(badge, true, fine), initStickers(badge.closest("section") ?? badge));
             if (fine) stops.push(initCursor());
           },
-          // Закреплённая лента услуг добавляет странице высоты — она раньше
-          // всех триггеров ниже неё, тогда они сразу считаются с её учётом.
-          services,
+          // Закреплённый блок услуг добавляет странице высоты — он раньше
+          // всех триггеров ниже него, тогда они сразу считаются с его учётом.
+          initServices,
           () => {
             header();
             progress();
