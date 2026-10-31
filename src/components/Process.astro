@@ -1,7 +1,15 @@
 ---
+import type { ImageMetadata } from "astro";
+import { Picture } from "astro:assets";
 import SectionHead from "./SectionHead.astro";
 import { steps } from "../data/services";
 import { typo } from "../lib/typo";
+
+// Файлы роликов — с хешем в имени, поэтому кэшируются навсегда, как и всё в _astro.
+const videos = import.meta.glob<string>("../assets/process/*.mp4", { eager: true, query: "?url", import: "default" });
+const posters = import.meta.glob<{ default: ImageMetadata }>("../assets/process/*.png", { eager: true });
+
+const clipSizes = "(min-width: 1280px) 42rem, (min-width: 768px) 56vw, calc(100vw - 6rem)";
 ---
 
 <section aria-labelledby="process-title" id="process" class="scroll-mt-16 py-20 sm:py-28">
@@ -13,20 +21,16 @@ import { typo } from "../lib/typo";
     />
 
     {/* Линия дорисовывается при прокрутке, кружки загораются, когда она до них
-        доходит (motion.ts). На телефоне шаги идут столбцом, на широком экране —
-        строкой. Без скрипта линия просто видна целиком. */}
+        доходит (motion.ts). Без скрипта линия просто видна целиком. У каждого шага
+        свой ролик: до запуска и при «уменьшить движение» виден постер, а играет
+        ролик, только пока он на экране (scripts/clips.ts). */}
     <div class="relative mt-12 sm:mt-16" data-process>
-      <span
-        class="absolute top-2 bottom-2 left-[1.0625rem] w-px origin-top bg-line lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-px lg:w-auto lg:origin-left"
-        aria-hidden="true"></span>
-      <span
-        class="absolute top-2 bottom-2 left-[1.0625rem] w-[2px] -translate-x-[0.5px] origin-top bg-ink lg:top-[1.0625rem] lg:right-0 lg:bottom-auto lg:left-0 lg:h-[2px] lg:w-auto lg:origin-left lg:translate-x-0 lg:-translate-y-[0.5px]"
-        aria-hidden="true"
-        data-process-line></span>
-      <ol class="relative grid gap-10 lg:grid-cols-5 lg:gap-8" data-stagger>
+      <span class="absolute top-2 bottom-2 left-[1.0625rem] w-px origin-top bg-line" aria-hidden="true"></span>
+      <span class="absolute top-2 bottom-2 left-[1.0625rem] w-[2px] -translate-x-[0.5px] origin-top bg-ink" aria-hidden="true" data-process-line></span>
+      <ol class="relative grid gap-12 md:gap-16" data-stagger>
         {
           steps.map((step, i) => (
-            <li class="grid grid-cols-[2.25rem_1fr] gap-x-5 lg:block" data-step>
+            <li class="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-5 md:grid-cols-[2.25rem_minmax(0,5fr)_minmax(0,8fr)] md:gap-x-8" data-step>
               <span
                 class="step-dot grid size-[2.25rem] place-items-center rounded-full border border-line bg-paper text-sm font-semibold text-ink"
                 aria-hidden="true"
@@ -34,12 +38,55 @@ import { typo } from "../lib/typo";
               >
                 {i + 1}
               </span>
-              <div class="lg:mt-6">
-                <h3 class="font-display text-[1.75rem] leading-tight font-bold">
+              <div>
+                <h3 class="font-display text-[1.75rem] leading-tight font-bold md:text-[2.75rem] md:leading-none">
                   <span class="sr-only">Шаг {i + 1}. </span>
                   {step.title}
                 </h3>
-                <p class="mt-2 leading-relaxed text-ink-2" set:html={typo(step.text)} />
+                <p class="mt-2 leading-relaxed text-ink-2 md:mt-4 md:text-lg" set:html={typo(step.text)} />
+              </div>
+              <div class="clip relative col-start-2 mt-5 md:col-start-3 md:mt-0" data-clip>
+                <div class="absolute inset-0" role="img" aria-label={step.clipLabel}>
+                <Picture
+                  src={posters[`../assets/process/${step.clip}.png`]!.default}
+                  alt=""
+                  widths={[480, 720, 960, 1440]}
+                  sizes={clipSizes}
+                  formats={["avif"]}
+                  fallbackFormat="webp"
+                  loading="lazy"
+                  decoding="async"
+                  class="absolute inset-0 h-full w-full object-cover"
+                />
+                {/* Адреса — в data-: ролик качается, только когда подходит к экрану. */}
+                <video
+                  class="clip-video absolute inset-0 h-full w-full object-cover"
+                  width="1440"
+                  height="960"
+                  muted
+                  loop
+                  playsinline
+                  disablepictureinpicture
+                  preload="none"
+                  tabindex="-1"
+                >
+                  <source data-src={videos[`../assets/process/${step.clip}.av1.mp4`]} type='video/mp4; codecs="av01.0.08M.08"' />
+                  <source data-src={videos[`../assets/process/${step.clip}.h264.mp4`]} type="video/mp4" />
+                </video>
+                </div>
+                <button
+                  type="button"
+                  class="clip-toggle absolute right-0 bottom-0 size-11 place-items-center text-paper md:right-1 md:bottom-1"
+                  data-clip-toggle
+                  data-label-pause={`Остановить ролики. Сейчас: ${step.title}`}
+                  data-label-play={`Запустить ролики. Сейчас: ${step.title}`}
+                  aria-label={`Остановить ролики. Сейчас: ${step.title}`}
+                >
+                  <svg viewBox="0 0 24 24" class="clip-toggle-disc size-7 rounded-full p-1.5 md:size-8 md:p-2" fill="currentColor" aria-hidden="true">
+                    <path class="clip-pause" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
+                    <path class="clip-play hidden" d="M8 5.5v13l10.5-6.5z" />
+                  </svg>
+                </button>
               </div>
             </li>
           ))

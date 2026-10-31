@@ -10,7 +10,7 @@
 //   data-draw — линия галочки прорисовывается;
 //   data-tilt + data-depth — наклон и глубина слоёв под курсором;
 //   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
-//   data-process — линия этапов и шаги;
+//   data-process — линия этапов и шаги (ролики шагов — scripts/clips.ts);
 //   data-progress — полоса прочитанного в шапке;
 //   data-marquee — ленты крест-накрест, разгоняются от прокрутки;
 //   data-manifesto — абзац проявляется по словам вслед за прокруткой;
@@ -26,6 +26,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { initLiveWindows } from "./live";
+import { initClips } from "./clips";
 import { initBadge } from "./badge";
 import { initStickers } from "./stickers";
 import { initCursor } from "./cursor";
@@ -291,45 +292,39 @@ function processLine() {
   const line = root?.querySelector<HTMLElement>("[data-process-line]");
   if (!root || !line) return;
   const steps = all("[data-step]", root);
-  const mm = gsap.matchMedia();
-  // На широком экране линия идёт слева направо, на узком — сверху вниз. Шаг
-  // загорается, когда линия дошла до его кружка.
-  mm.add({ wide: "(min-width: 1024px)" }, (ctx) => {
-    const wide = Boolean(ctx.conditions?.wide);
-    // Положение кружков вдоль линии. Размеры линии — из offset*, а не из
-    // getBoundingClientRect: линия сжата анимацией, и её рамка в начале нулевая.
-    const at = () => {
-      const box = root.getBoundingClientRect();
-      const start = wide ? box.left + line.offsetLeft : box.top + line.offsetTop;
-      const length = (wide ? line.offsetWidth : line.offsetHeight) || 1;
-      return steps.map((step) => {
-        const dot = (step.querySelector("[data-step-dot]") ?? step).getBoundingClientRect();
-        return ((wide ? dot.left + dot.width / 2 : dot.top + dot.height / 2) - start) / length;
-      });
-    };
-    let positions = at();
-    gsap.fromTo(
-      line,
-      wide ? { scaleX: 0, scaleY: 1 } : { scaleY: 0, scaleX: 1 },
-      {
-        scaleX: 1,
-        scaleY: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: root,
-          start: "top 75%",
-          end: wide ? "bottom 55%" : "bottom 65%",
-          scrub: 0.6,
-          onRefresh: () => {
-            positions = at();
-          },
-          onUpdate: (self) => {
-            steps.forEach((step, i) => step.classList.toggle("is-active", self.progress >= (positions[i] ?? 0) - 0.01));
-          },
+  // Шаг загорается, когда линия дошла до его кружка. Положение кружков вдоль
+  // линии: её размеры — из offset*, а не из getBoundingClientRect: линия сжата
+  // анимацией, и её рамка в начале нулевая.
+  const at = () => {
+    const box = root.getBoundingClientRect();
+    const start = box.top + line.offsetTop;
+    const length = line.offsetHeight || 1;
+    return steps.map((step) => {
+      const dot = (step.querySelector("[data-step-dot]") ?? step).getBoundingClientRect();
+      return (dot.top + dot.height / 2 - start) / length;
+    });
+  };
+  let positions = at();
+  gsap.fromTo(
+    line,
+    { scaleY: 0 },
+    {
+      scaleY: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: root,
+        start: "top 75%",
+        end: "bottom 65%",
+        scrub: 0.6,
+        onRefresh: () => {
+          positions = at();
+        },
+        onUpdate: (self) => {
+          steps.forEach((step, i) => step.classList.toggle("is-active", self.progress >= (positions[i] ?? 0) - 0.01));
         },
       },
-    );
-  });
+    },
+  );
 }
 
 function progress() {
@@ -752,6 +747,7 @@ export function init() {
           contactReveal,
           () => {
             stops.push(initLiveWindows(fine));
+            stops.push(initClips());
             if (fine) stops.push(hover());
           },
           () => stops.push(marquee()),

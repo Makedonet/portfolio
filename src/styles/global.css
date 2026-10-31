@@ -612,6 +612,41 @@
     scale: 1.15;
   }
 
+  /* Ролик шага: рамка держит размер до загрузки, ролик проявляется над постером.
+     Кнопка паузы нужна, только когда ролики движутся. */
+  .clip {
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: var(--color-line);
+    box-shadow:
+      0 1px 2px rgb(17 17 16 / 0.06),
+      0 14px 36px -10px rgb(17 17 16 / 0.22);
+    outline: 1px solid rgb(17 17 16 / 0.1);
+    outline-offset: -1px;
+  }
+  .clip-video {
+    opacity: 0;
+    transition: opacity 0.35s var(--ease-out);
+  }
+  .clip-video.is-playing {
+    opacity: 1;
+  }
+  .clip-toggle {
+    display: none;
+  }
+  .motion-on .clip-toggle {
+    display: grid;
+  }
+  /* Кнопка 44px для пальца, а виден маленький кружок: большой закрывал бы кадр. */
+  .clip-toggle-disc {
+    background: rgb(17 17 16 / 0.72);
+    transition: background-color 0.2s var(--ease-out);
+  }
+  .clip-toggle:hover .clip-toggle-disc {
+    background: var(--color-ink);
+  }
+
   /* Абзац подхода: пока слово не «прочитано», видна только его обводка
      (заливку ведёт motion.ts). В вариативном шрифте контуры букв накладываются
      друг на друга, поэтому обводка под заливкой: иначе внутри «д» и «ц» видны
