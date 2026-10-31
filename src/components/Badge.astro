@@ -3,8 +3,9 @@
 // с гвоздика), визитку можно схватить и бросить: она качается, крутится и
 // приходит в покой (scripts/badge.ts). Клик или кнопка — перевернуть: на
 // обороте фото, Telegram с QR-кодом и телефон. Портрет на лицевой стороне —
-// полутоновая «печать» (tools/halftone.mjs); под курсором точки
-// разбегаются и проступает настоящее фото (scripts/portrait.ts).
+// полутоновая «печать» (tools/halftone.mjs); под курсором точки разбегаются и
+// проступает настоящее фото, а пальцем их можно стереть насовсем, как слой
+// лотерейного билета (scripts/portrait.ts).
 // Наклейки вокруг можно отклеить и перетащить (scripts/stickers.ts).
 // Без скрипта и при «уменьшить движение» визитка просто висит; перевернуть
 // её можно и тогда — это не анимация, а содержимое.
@@ -37,8 +38,8 @@ const strapText = "Максим • сайты под ключ • ".repeat(2);
 const portraitSizes = "(min-width: 1280px) 340px, (min-width: 1024px) 320px, (min-width: 640px) 300px, 276px";
 const photoSizes = "(min-width: 1280px) 308px, (min-width: 1024px) 290px, 260px";
 
-// Цветной портрет нужен только в «линзе» под курсором, фото с гор — только на
-// обороте. Их адреса лежат в data-атрибутах, грузит скрипт после загрузки
+// Цветной портрет нужен только под курсором или пальцем, фото с гор — только
+// на обороте. Их адреса лежат в data-атрибутах, грузит скрипт после загрузки
 // страницы (scripts/badge.ts): к первой отрисовке они не нужны.
 const variants = async (src: ImageMetadata, widths: number[]) => ({
   avif: (await getImage({ src, widths, format: "avif", quality: 60 })).srcSet.attribute,
@@ -109,7 +110,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
 
   <div class="badge" role="group" aria-label="Визитка" data-badge-card data-cursor="Тяните или кликните">
     <div class="badge-swing" data-badge-swing>
-      <div class="badge-spin" data-badge-spin>
+      <div class="badge-spin">
         <div class="badge-face badge-front" data-badge-face="front">
           <span class="badge-slot" aria-hidden="true"></span>
           <span class="badge-logo"><Logo class="h-full w-auto" /></span>
@@ -129,10 +130,15 @@ const photoImage = await variants(mountains, [320, 480, 640]);
                 alt=""
                 decoding="async"
                 data-badge-deferred="hover"
+                data-portrait-color
               />
             </picture>
+            {/* Что стёрто пальцем, поверх всего: фото, вырезанное по следу. */}
+            <canvas class="portrait-reveal" aria-hidden="true" data-portrait-reveal></canvas>
+            <span class="badge-finger" aria-hidden="true" data-badge-finger></span>
           </div>
-          <div class="badge-band">
+          <span class="badge-tip" aria-hidden="true" data-badge-tip></span>
+          <div class="badge-band" data-badge-band>
             <p class="badge-name">Максим</p>
             <p class="badge-role">разработка сайтов под&nbsp;ключ</p>
             <svg class="badge-code" viewBox="0 0 46 22" aria-hidden="true" focusable="false">
@@ -306,26 +312,24 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     position: absolute;
     inset: 0;
     transform-origin: 50% -0.9em;
-    perspective: 1400px;
   }
   .badge-spin {
     position: absolute;
     inset: 0;
-    transform-style: preserve-3d;
   }
   .badge-face {
     position: absolute;
     inset: 0;
     overflow: hidden;
     border-radius: 1.375em;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
     box-shadow:
       0 1px 2px rgb(17 17 16 / 0.12),
       0 1.4em 2.6em -1em rgb(17 17 16 / 0.42);
   }
   .badge-back {
     transform: rotateY(180deg);
+    /* Показывает скрипт, когда визитка повернулась этой стороной (badge.ts). */
+    visibility: hidden;
     background: var(--color-ink);
     color: var(--color-paper);
   }
@@ -402,7 +406,8 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   .portrait-dots,
   .portrait-canvas,
-  .portrait-color {
+  .portrait-color,
+  .portrait-reveal {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -410,6 +415,9 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   .portrait-canvas {
     display: none;
+  }
+  .portrait-reveal {
+    pointer-events: none;
   }
   /* Цветное фото — только в «линзе» под курсором (--lx, --ly, --lr). */
   .portrait-color {
@@ -421,6 +429,49 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   :global(.portrait-live) .portrait-canvas {
     display: block;
+  }
+
+  /* Подсказка на телефоне и палец-призрак, который показывает жест. Их
+     включает скрипт (badge.ts): без него стирать нечем. */
+  .badge-tip {
+    position: absolute;
+    left: 50%;
+    bottom: 6.75em;
+    translate: -50% 0.4em;
+    padding: 0.45em 0.9em;
+    border-radius: 1em;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.3s,
+      translate 0.5s var(--ease-out-expo);
+  }
+  .badge-tip:global(.is-on) {
+    opacity: 1;
+    translate: -50% 0;
+  }
+  .badge-finger {
+    position: absolute;
+    top: -1.5em;
+    left: -1.5em;
+    width: 3em;
+    height: 3em;
+    border-radius: 50%;
+    border: 0.14em solid rgb(255 255 255 / 0.9);
+    background: rgb(255 255 255 / 0.28);
+    box-shadow: 0 0.2em 0.7em rgb(17 17 16 / 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .badge-finger:global(.is-on) {
+    opacity: 1;
   }
 
   .badge-band {
@@ -571,6 +622,23 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   .badge-flip:hover svg {
     rotate: 180deg;
+  }
+  /* Портрет стёрт: кнопка зовёт перевернуть — там контакты. */
+  .badge-flip:global(.is-calling) {
+    background: var(--color-accent);
+    color: var(--color-ink);
+    animation: badge-call 1.5s ease-in-out infinite;
+  }
+  @keyframes badge-call {
+    0%,
+    100% {
+      scale: 1;
+      box-shadow: 0 0 0 0 rgb(17 17 16 / 0.45);
+    }
+    50% {
+      scale: 1.14;
+      box-shadow: 0 0 0 0.7em rgb(17 17 16 / 0);
+    }
   }
   /* Без скрипта перевернуть нечем. */
   :global(html:not(.js)) .badge-flip {

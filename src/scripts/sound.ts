@@ -4,7 +4,7 @@
 // ([data-sound-toggle]) выключает звук, выбор помнится в localStorage.
 // AudioContext создаётся при первом нажатии: раньше браузер его не пустит.
 
-export type Sound = "tick" | "flip" | "pop" | "on" | "whoosh";
+export type Sound = "tick" | "flip" | "pop" | "on" | "whoosh" | "scratch" | "reveal";
 
 const KEY = "sound";
 let ctx: AudioContext | null = null;
@@ -107,6 +107,15 @@ export function play(kind: Sound) {
       break;
     case "whoosh":
       hiss(c, t, 0.32, 280, 1500, 0.22, 0.7);
+      break;
+    case "scratch":
+      hiss(c, t, 0.08, 3000 + Math.random() * 1400, 1900, 0.14, 1.4);
+      break;
+    case "reveal":
+      hiss(c, t, 0.4, 500, 3600, 0.2, 0.8);
+      tone(c, t + 0.04, 523, 0.16, 0.14);
+      tone(c, t + 0.13, 784, 0.18, 0.14);
+      tone(c, t + 0.22, 1175, 0.28, 0.14);
       break;
   }
 }

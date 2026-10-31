@@ -3,8 +3,15 @@
 // интегрированием Верле с ограничениями длины, как верёвки в играх.
 // - Мышью визитку можно схватить и бросить; бросок вбок её раскручивает,
 //   и после оборотов она встаёт той стороной, к которой ближе.
-// - Клик или кнопка — перевернуть. Касание на телефоне — тоже; свайп вбок
-//   крутит визитку, вертикальный — как обычно листает страницу.
+// - Клик или кнопка — перевернуть.
+// - На телефоне правило одно: вертикальный свайп всегда листает страницу,
+//   горизонтальный — играет с визиткой, а дальше палец волен идти куда угодно.
+//   По портрету такой свайп стирает точки, как защитный слой лотерейного
+//   билета (scripts/portrait.ts); стёрто больше половины — остаток сносит
+//   волной, а визитка подсказывает, что контакты на обороте. Касание портрета
+//   пускает по точкам волну, касание стёртого — собирает точки обратно.
+//   По остальной визитке свайп хватает и бросает её, как мышь; касание —
+//   переворачивает. Пока никто не трогал, призрачный палец показывает, что делать.
 // - Прокрутка страницы на компьютере слегка относит визитку в сторону, как
 //   ветер; на сенсорных экранах прокрутка её не трогает.
 // - Под курсором визитка наклоняется, по ней бежит блик, на портрете
@@ -29,17 +36,32 @@ const SPIN_K = 95;
 const SPIN_C = 11;
 /** Сила «ветра» от прокрутки на полной скорости, px/с². */
 const WIND = 280;
+/** Какую долю точек стереть пальцем, чтобы остальное снесло само. */
+const ERASE_GOAL = 0.5;
+/** Подсказки на визитке: сначала что делать, затем как идут дела и что дальше. */
+const TIP_START = "Сотрите точки пальцем";
+const TIP_MIDDLE = "Ещё немного";
+const TIP_DONE = "Контакты на обороте";
+
+/** Звук и вибрация до первого касания браузером запрещены и шумят в консоли. */
+const activated = () => navigator.userActivation?.hasBeenActive ?? false;
+const buzz = (pattern: number | number[]) => {
+  if (activated()) navigator.vibrate?.(pattern);
+};
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): () => void {
   const card = root.querySelector<HTMLElement>("[data-badge-card]")!;
   const swing = root.querySelector<HTMLElement>("[data-badge-swing]")!;
-  const spinEl = root.querySelector<HTMLElement>("[data-badge-spin]")!;
   const button = root.querySelector<HTMLButtonElement>("[data-badge-flip]")!;
   const front = root.querySelector<HTMLElement>('[data-badge-face="front"]')!;
   const back = root.querySelector<HTMLElement>('[data-badge-face="back"]')!;
   const portraitBox = root.querySelector<HTMLElement>("[data-portrait]")!;
+  const band = root.querySelector<HTMLElement>("[data-badge-band]")!;
+  const tip = root.querySelector<HTMLElement>("[data-badge-tip]")!;
+  const finger = root.querySelector<HTMLElement>("[data-badge-finger]")!;
+  const colorImage = root.querySelector<HTMLImageElement>("[data-portrait-color]")!;
   const cleanups: Array<() => void> = [];
   const listen = (target: EventTarget, type: string, fn: (event: never) => void, options?: AddEventListenerOptions) => {
     target.addEventListener(type, fn as EventListener, options);
@@ -47,8 +69,8 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   };
 
   // Фото с оборота и цветной портрет — после загрузки страницы, заранее:
-  // к перевороту или первому наведению они уже будут готовы. Цветной портрет
-  // виден только в «линзе» под курсором — без мыши его незачем качать.
+  // к перевороту или первому наведению они уже будут готовы. Без мыши цветной
+  // портрет нужен, только когда визитка показалась на экране (startTouch ниже).
   root.querySelectorAll<HTMLImageElement>("[data-badge-deferred]").forEach((img) => {
     if (fine || img.dataset.badgeDeferred !== "hover") void load(img);
   });
@@ -63,15 +85,30 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     button.setAttribute("aria-pressed", String(face === 1));
   };
 
+  /** Сторона к зрителю — по углу поворота; другая прячется, пока визитка стоит
+   *  ребром. Поворот получает сама видимая сторона, а не их общий родитель:
+   *  preserve-3d с backface-visibility браузеры рисуют по-разному, и в WebKit и
+   *  Firefox оборот бывал виден зеркально, поверх лицевой стороны или со сдвигом. */
+  let turned = false;
+  const showSide = (degrees: number) => {
+    const next = Math.cos((degrees * Math.PI) / 180) < 0;
+    if (next === turned) return;
+    turned = next;
+    front.style.visibility = turned ? "hidden" : "";
+    back.style.visibility = turned ? "visible" : "";
+  };
+
   if (!motion) {
     listen(button, "click", () => {
       showFace(1 - face);
-      spinEl.style.transform = face ? "rotateY(180deg)" : "";
+      back.style.transform = face ? "none" : "";
+      showSide(face ? 180 : 0);
     });
     return () => {
       cleanups.forEach((fn) => fn());
-      spinEl.style.transform = "";
+      back.style.transform = "";
       showFace(0);
+      showSide(0);
     };
   }
 
@@ -197,6 +234,9 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     target = Math.round(target / 180) * 180 + 180 * direction;
     showFace(mod(Math.round(target / 180), 2));
     if (face === 1) portrait?.leave();
+    // Подсказка сделала своё: контакты открыли.
+    button.classList.remove("is-calling");
+    if (revealed) setTip(null);
     wake();
   };
 
@@ -213,7 +253,11 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     const c = clip();
     const a = angle();
     card.style.transform = `translate3d(${(c.x - W / 2 - left0).toFixed(2)}px, ${(c.y + A - top0).toFixed(2)}px, 0) rotate(${a.toFixed(4)}rad)`;
-    spinEl.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${(phi + tiltY).toFixed(2)}deg)`;
+    const turn = phi + tiltY;
+    showSide(turn);
+    const pose = `perspective(1400px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${turn.toFixed(2)}deg)`;
+    if (turned) back.style.transform = `${pose} rotateY(180deg)`;
+    else front.style.transform = pose;
     card.style.setProperty("--gx", `${glareX.toFixed(1)}%`);
     card.style.setProperty("--gy", `${glareY.toFixed(1)}%`);
     card.style.setProperty("--sx", `${(140 - glareX * 1.6).toFixed(1)}%`);
@@ -260,7 +304,12 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     const ease = 1 - Math.exp(-dt * 9);
     tiltX += (goalX - tiltX) * ease;
     tiltY += (goalY - tiltY) * ease;
-    const dots = portrait?.tick() ?? false;
+    const dots = portrait?.tick(dt) ?? false;
+    if (scratching && portrait) {
+      const erased = portrait.erased();
+      if (erased >= ERASE_GOAL) finishScratch();
+      else if (erased > 0.2) setTip(TIP_MIDDLE);
+    }
     render();
     let energy = 0;
     for (const p of [...pts, bottom]) energy += Math.abs(p.x - p.px) + Math.abs(p.y - p.py);
@@ -305,9 +354,90 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     return { x, y, lx, ly, u: (lx + W / 2) / W, v: (ly + A) / H };
   };
 
-  // Нажатие: без сдвига — переворот, со сдвигом — бросок (мышь) или
-  // раскрутка (палец, только вбок).
-  let press: { id: number; x: number; y: number; moved: boolean; mouse: boolean; phi0: number } | null = null;
+  /** Координаты визитки → координаты портрета. */
+  const onPortrait = (at: { lx: number; ly: number }) => ({ x: at.lx + W / 2 - portraitBox.offsetLeft, y: at.ly + A - portraitBox.offsetTop });
+
+  const lean = (at: { u: number; v: number }) => {
+    goalY = gsap.utils.clamp(-1, 1, at.u * 2 - 1) * 9;
+    goalX = -gsap.utils.clamp(-1, 1, at.v * 2 - 1) * 7;
+    glareX = at.u * 100;
+    glareY = at.v * 100;
+  };
+  const relax = () => {
+    hover = false;
+    goalX = 0;
+    goalY = 0;
+    glareX = 50;
+    glareY = -20;
+  };
+
+  const setTip = (text: string | null) => {
+    if (text && tip.textContent !== text) tip.textContent = text;
+    tip.classList.toggle("is-on", Boolean(text));
+  };
+
+  // Стирание пальцем.
+  let scratching = false;
+  let revealed = false;
+  let lastScratch = { x: 0, y: 0 };
+  let lastSound = 0;
+  let lastBuzz = 0;
+  const startScratch = (at: ReturnType<typeof locate>) => {
+    stopDemo();
+    scratching = true;
+    hover = true;
+    lean(at);
+    lastScratch = onPortrait(at);
+    portrait?.scratchStart(lastScratch.x, lastScratch.y);
+  };
+  const endScratch = () => {
+    scratching = false;
+    relax();
+    portrait?.scratchEnd();
+  };
+  const scratchFeedback = (time: number) => {
+    if (time - lastSound > 80 && activated()) {
+      lastSound = time;
+      play("scratch");
+    }
+    if (time - lastBuzz > 120) {
+      lastBuzz = time;
+      buzz(6);
+    }
+  };
+  /** Стёрто достаточно: остаток сносит волной от пальца, визитку встряхивает. */
+  const finishScratch = () => {
+    scratching = false;
+    revealed = true;
+    relax();
+    portrait?.blast(lastScratch.x, lastScratch.y);
+    setTip(TIP_DONE);
+    button.classList.add("is-calling");
+    // Толчок мягкий: кнопка переворота должна остаться на экране.
+    bottom.px -= lastScratch.x < portraitBox.clientWidth / 2 ? -1.5 : 1.5;
+    tiltY = lastScratch.x < portraitBox.clientWidth / 2 ? 12 : -12;
+    if (activated()) play("reveal");
+    buzz([10, 40, 18]);
+  };
+  /** Касание портрета: целый — волна по точкам, стёртый — точки слетаются назад. */
+  const tapPortrait = (at: ReturnType<typeof locate>) => {
+    stopDemo();
+    if (revealed) {
+      revealed = false;
+      portrait?.restore();
+      button.classList.remove("is-calling");
+      setTip(TIP_START);
+      play("whoosh");
+    } else {
+      const point = onPortrait(at);
+      portrait?.poke(point.x, point.y);
+      play("tick");
+    }
+  };
+
+  // Нажатие: без сдвига — переворот (касание портрета — волна), со сдвигом —
+  // стирание (палец по портрету) или бросок.
+  let press: { id: number; x: number; y: number; moved: boolean; mouse: boolean; zone: boolean } | null = null;
   let samples: Sample[] = [];
   const velocity = () => {
     const last = samples[samples.length - 1];
@@ -321,7 +451,11 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     if (event.button !== 0 || (event.target as Element).closest("a, button")) return;
     // Вход ещё качается — отдаём визитку физике.
     swing.getAnimations().forEach((animation) => animation.finish());
-    press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, mouse: event.pointerType === "mouse", phi0: phi };
+    const mouse = event.pointerType === "mouse";
+    // Палец на портрете: ниже портрета — чёрная полоса с именем, за неё хватают.
+    const at = locate(event.clientX, event.clientY);
+    const zone = !mouse && face === 0 && Boolean(portrait) && at.ly + A < band.offsetTop;
+    press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, mouse, zone };
     samples = [{ x: event.clientX, y: event.clientY, t: event.timeStamp }];
     if (press.mouse) event.preventDefault();
     wake();
@@ -330,25 +464,36 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   listen(card, "pointermove", (event: PointerEvent) => {
     if (press && event.pointerId === press.id) {
       const dx = event.clientX - press.x;
-      if (!press.moved && Math.hypot(dx, event.clientY - press.y) > 6) {
+      const dy = event.clientY - press.y;
+      // Вертикальный свайп заберёт браузер (touch-action: pan-y) и пришлёт
+      // pointercancel: это прокрутка страницы, её не трогаем.
+      if (!press.moved && !press.mouse && Math.abs(dy) > Math.abs(dx)) return;
+      if (!press.moved && Math.hypot(dx, dy) > 6) {
         press.moved = true;
         card.setPointerCapture(event.pointerId);
-        if (press.mouse) {
-          const at = locate(press.x, press.y);
+        const at = locate(press.x, press.y);
+        if (press.zone && !revealed) {
+          startScratch(at);
+        } else {
+          stopDemo();
           held = { lx: at.lx, ly: at.ly, tx: at.x, ty: at.y };
           card.classList.add("is-held");
           hover = false;
           goalX = 0;
           goalY = 0;
           portrait?.leave();
-        } else {
-          freeSpin = false;
         }
       }
       if (press.moved) {
         samples.push({ x: event.clientX, y: event.clientY, t: event.timeStamp });
         if (samples.length > 12) samples.shift();
-        if (held) {
+        if (scratching) {
+          const at = locate(event.clientX, event.clientY);
+          lastScratch = onPortrait(at);
+          lean(at);
+          portrait?.scratch(lastScratch.x, lastScratch.y);
+          scratchFeedback(event.timeStamp);
+        } else if (held) {
           // Поводок: дальше ленты с запасом не утащить.
           const at = locate(event.clientX, event.clientY);
           const ox = at.x - anchor.x;
@@ -358,10 +503,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
           const k = d > limit ? limit / d : 1;
           held.tx = anchor.x + ox * k;
           held.ty = anchor.y + oy * k;
-        } else {
-          phi = press.phi0 + dx * 0.6;
-          target = phi;
-          omega = 0;
         }
         wake();
       }
@@ -370,28 +511,34 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     if (event.pointerType !== "mouse" || held) return;
     const at = locate(event.clientX, event.clientY);
     hover = true;
-    goalY = gsap.utils.clamp(-1, 1, at.u * 2 - 1) * 9;
-    goalX = -gsap.utils.clamp(-1, 1, at.v * 2 - 1) * 7;
-    glareX = at.u * 100;
-    glareY = at.v * 100;
-    if (face === 0 && portrait) portrait.pointer(at.lx + W / 2 - portraitBox.offsetLeft, at.ly + A - portraitBox.offsetTop);
+    lean(at);
+    if (face === 0 && portrait) {
+      const point = onPortrait(at);
+      portrait.pointer(point.x, point.y);
+    }
     wake();
   });
 
   const release = (event: PointerEvent, cancelled: boolean) => {
     if (!press || event.pointerId !== press.id) return;
-    const { moved, mouse } = press;
+    const { moved, zone } = press;
     press = null;
     if (!moved) {
       if (!cancelled) {
         const at = locate(event.clientX, event.clientY);
-        flip(at.u < 0.5 ? -1 : 1);
-        play("flip");
+        if (zone) {
+          tapPortrait(at);
+        } else {
+          flip(at.u < 0.5 ? -1 : 1);
+          play("flip");
+        }
       }
+      wake();
       return;
     }
-    const v = velocity();
-    if (mouse) {
+    if (scratching) endScratch();
+    if (held) {
+      const v = velocity();
       held = null;
       card.classList.remove("is-held");
       // Скорость броска — с запасом поменьше: иначе визитка улетает под шапку.
@@ -404,13 +551,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
         omega = gsap.utils.clamp(-1300, 1300, omega + v.x * 0.3);
         play("whoosh");
       }
-    } else {
-      omega = gsap.utils.clamp(-1800, 1800, v.x * 0.6);
-      freeSpin = Math.abs(omega) > 240;
-      if (!freeSpin) {
-        target = Math.round(phi / 180) * 180;
-        showFace(mod(Math.round(target / 180), 2));
-      }
     }
     wake();
   };
@@ -419,11 +559,7 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
 
   listen(card, "pointerleave", (event: PointerEvent) => {
     if (event.pointerType !== "mouse" || press) return;
-    hover = false;
-    goalX = 0;
-    goalY = 0;
-    glareX = 50;
-    glareY = -20;
+    relax();
     portrait?.leave();
     wake();
   });
@@ -444,10 +580,84 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     { passive: true },
   );
 
+  // Призрачный палец: проводит по портрету, пока никто его не трогал, — один
+  // раз, когда портрет на экране, и ещё раз, если посетитель так и не решился.
+  let demoTween: gsap.core.Tween | null = null;
+  let demoTimer = 0;
+  let demoPlays = 0;
+  let demoOver = fine;
+  const finishDemoStroke = () => {
+    demoTween = null;
+    finger.classList.remove("is-on");
+    portrait?.leave();
+    wake();
+  };
+  const playDemo = () => {
+    if (demoOver || !portrait || face !== 0) return;
+    demoPlays++;
+    finger.classList.add("is-on");
+    const width = portraitBox.clientWidth;
+    const height = portraitBox.clientHeight;
+    demoTween = gsap.to(
+      { t: 0 },
+      {
+        t: 1,
+        duration: 1.9,
+        ease: "sine.inOut",
+        onUpdate(this: gsap.core.Tween) {
+          const t = this.targets<{ t: number }>()[0]!.t;
+          const x = width * (0.18 + 0.64 * t);
+          const y = height * (0.42 + 0.14 * Math.sin(t * Math.PI * 3));
+          finger.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+          portrait?.pointer(x, y);
+          wake();
+        },
+        onComplete() {
+          finishDemoStroke();
+          if (demoPlays < 2) demoTimer = window.setTimeout(playDemo, 7000);
+        },
+      },
+    );
+  };
+  const stopDemo = () => {
+    demoOver = true;
+    clearTimeout(demoTimer);
+    if (demoTween) {
+      demoTween.kill();
+      finishDemoStroke();
+    }
+  };
+  const demoWatch = new IntersectionObserver(
+    ([entry]) => {
+      clearTimeout(demoTimer);
+      if (entry?.isIntersecting && !demoTween && demoPlays < 2) demoTimer = window.setTimeout(playDemo, 500);
+    },
+    { threshold: 0.65 },
+  );
+
+  // Без мыши всё для портрета качается, только когда визитка показалась: на
+  // телефоне она ниже первого экрана, и первой отрисовке это не нужно.
+  let touchStarted = false;
+  const startTouch = () => {
+    if (touchStarted || fine) return;
+    touchStarted = true;
+    void Promise.all([createPortrait(portraitBox), load(colorImage)]).then(([p]) => {
+      portrait = p;
+      if (!p) return;
+      setTip(TIP_START);
+      demoWatch.observe(portraitBox);
+    });
+  };
+
   const seen = new IntersectionObserver(([entry]) => {
     visible = Boolean(entry?.isIntersecting);
-    if (visible) wake();
-    else sleep();
+    if (visible) {
+      startTouch();
+      wake();
+    } else {
+      portrait?.clearDust();
+      sleep();
+    }
   });
   seen.observe(root);
 
@@ -469,8 +679,7 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
 
   reset();
   render();
-  // Точки разбегаются только под курсором мыши. Без мыши портрет остаётся
-  // чёткой SVG-картинкой — и не подменяется на глазах.
+  // С мышью портрет готовится сразу: курсор может оказаться на нём в любой миг.
   if (fine) {
     void createPortrait(portraitBox).then((p) => {
       portrait = p;
@@ -480,12 +689,19 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   return () => {
     cleanups.forEach((fn) => fn());
     seen.disconnect();
+    demoWatch.disconnect();
+    stopDemo();
+    portrait?.clearDust();
     sleep();
     clearTimeout(resizeTimer);
+    setTip(null);
+    button.classList.remove("is-calling");
     card.style.transform = "";
-    spinEl.style.transform = "";
+    front.style.transform = "";
+    back.style.transform = "";
     root.querySelectorAll<SVGPathElement>("[data-strap]").forEach((p) => p.dataset.d && p.setAttribute("d", p.dataset.d));
     portraitBox.classList.remove("portrait-live");
     showFace(0);
+    showSide(0);
   };
 }
