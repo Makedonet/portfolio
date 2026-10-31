@@ -69,7 +69,7 @@ const n = String(index + 1).padStart(2, "0");
   <div class:list={[featured ? "lg:col-span-5" : "contents"]}>
     <div class:list={[!featured && "mt-6"]}>
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-fade>
-        <span class="text-sm text-muted">{n} · {work.industry}</span>
+        <span class="text-sm text-muted">{n}&ensp;{work.industry}</span>
         <span
           class:list={[
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",

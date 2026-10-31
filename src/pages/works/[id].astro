@@ -25,14 +25,13 @@ interface Props {
 }
 
 const { work, index } = Astro.props;
-const num = (i: number) => String(i + 1).padStart(2, "0");
 // За последним кейсом снова первый: дальше всегда есть куда идти.
 const nextIndex = (index + 1) % works.length;
 const next = works[nextIndex]!;
 const nextPoster = scene(next.screens.desktop[0]!).poster;
 ---
 
-<Layout title={`Кейс ${work.title} · ${site.title}`} description={work.summary}>
+<Layout title={`Кейс ${work.title} | ${site.title}`} description={work.summary}>
   {/* Первая отрисовка ждёт окно кейса: иначе переход с главной не найдёт,
       во что перетекать превью. */}
   <link slot="head" rel="expect" href="#case-window" blocking="render" />
@@ -50,7 +49,7 @@ const nextPoster = scene(next.screens.desktop[0]!).poster;
         <span class="case-next-fill" aria-hidden="true"></span>
         <span class="container-page case-next-inner">
           <span class="case-next-text">
-            <span class="text-sm text-muted">Следующий кейс · {num(nextIndex)} · {next.industry}</span>
+            <span class="text-sm text-muted">Следующий кейс: {next.industry}</span>
             <span class="case-next-title" set:html={typo(next.title)} />
             <span class="text-ink-2" set:html={typo(next.highlight)} />
           </span>

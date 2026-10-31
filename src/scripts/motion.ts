@@ -59,6 +59,14 @@ function measureOnScreen(): Set<Element> {
   return seen;
 }
 
+/** Разбивка на слова по обычным пробелам: неразрывные из typo() остаются внутри
+ *  слова. По умолчанию SplitText сводит любой пробел к обычному — и дефис,
+ *  привязанный к слову перед ним, мог начать строку. */
+const keepNbsp = {
+  reduceWhiteSpace: false,
+  prepareText: (text: string) => text.replace(/[ \t\r\n]+/g, " "),
+};
+
 /** Заголовки — каждый своей задачей: разбивка на строки и слова требует
  *  раскладки, а все разом на телефоне заняли бы поток на десятую секунды. */
 function headings(onScreen: Set<Element>): Array<() => void> {
@@ -66,6 +74,7 @@ function headings(onScreen: Set<Element>): Array<() => void> {
     .filter((el) => !onScreen.has(el))
     .map((el) => () => {
       SplitText.create(el, {
+        ...keepNbsp,
         type: "lines,words",
         mask: "lines",
         autoSplit: true,
@@ -178,7 +187,7 @@ function odometers(onScreen: Set<Element>): () => void {
  *  убывает вместе с полосой. */
 function gauges(onScreen: Set<Element>): () => void {
   const rings = all<SVGCircleElement>(".ring-value").filter((ring) => !onScreen.has(ring));
-  gsap.set(rings, { strokeDashoffset: (_i: number, ring: SVGCircleElement) => Number(ring.dataset.ringLength) });
+  if (rings.length) gsap.set(rings, { strokeDashoffset: (_i: number, ring: SVGCircleElement) => Number(ring.dataset.ringLength) });
 
   const timelines = new Map<Element, gsap.core.Timeline>();
   all(".metric-bars")
@@ -384,7 +393,16 @@ function manifesto(): Array<() => void> {
   let words: Element[] = [];
   // Для скринридера рядом есть обычный текст, разбивка спрятана целиком.
   const split = () => {
-    words = SplitText.create(el, { type: "words", wordsClass: "manifesto-word", aria: "none" }).words;
+    const parts = SplitText.create(el, { ...keepNbsp, type: "words", wordsClass: "manifesto-word", aria: "none" }).words;
+    // Знак сразу за маркером («картинка.») SplitText делает отдельным словом, и
+    // он мог уехать на новую строку. Прилепить к слову перед ним.
+    words = parts.filter((word, i) => {
+      const before = parts[i - 1];
+      if (!before || !/^[.,:;!?]+$/.test(word.textContent ?? "")) return true;
+      before.textContent += word.textContent ?? "";
+      word.remove();
+      return false;
+    });
   };
   const fill = () => {
     gsap.fromTo(

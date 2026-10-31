@@ -1,6 +1,8 @@
 // «Живые окна» (components/LiveWindow.astro): длинный кадр сайта листается
 // GSAP-таймлайном с паузами на секциях, как запись экрана.
-// - Кадры грузятся, когда окно подходит к экрану; до того виден постер.
+// - Кадр первой страницы грузится, когда окно подходит к экрану; до того виден
+//   постер. Кадр каждой следующей — пока идёт предыдущая: страницы, до которых
+//   посетитель не дошёл, не качаются.
 // - Таймлайн идёт, только пока окно на экране.
 // - Под курсором автопрокрутка встаёт, и сайт в окне листается колёсиком,
 //   как настоящий. Дойдя до края, колёсико снова листает страницу — но не в
@@ -153,16 +155,24 @@ export function initLiveWindows(fine: boolean): () => void {
     };
     group.syncs.push(sync);
 
-    const activate = async () => {
-      // Первая страница — сразу, остальные и полосы шапок — следом.
-      await load(scenes[0]!.page);
-      gsap.to(scenes[0]!.page, { opacity: 1, duration: 0.4 });
-      await Promise.all([
-        ...scenes.slice(1).map((s) => load(s.page).then(() => gsap.set(s.page, { opacity: 1 }))),
-        ...scenes.map((s) => (s.header ? load(s.header) : Promise.resolve())),
+    // Кадр страницы и полоса её шапки: один раз на страницу.
+    const loaded = new Set<number>();
+    const ensure = (index: number) => {
+      const scene = scenes[index];
+      if (!scene || loaded.has(index)) return Promise.resolve();
+      loaded.add(index);
+      return Promise.all([
+        load(scene.page).then(() => gsap.to(scene.page, { opacity: 1, duration: 0.4 })),
+        scene.header ? load(scene.header) : Promise.resolve(),
       ]);
+    };
+
+    const activate = async () => {
+      await ensure(0);
       scenes.forEach((s) => s.header && gsap.set(s.header, { autoAlpha: 0 }));
       ({ tl, holds } = buildTimeline(scenes, (index, progress) => {
+        // Следующая страница — заранее, пока идёт эта: паузы на ней хватает на загрузку.
+        void ensure(index + 1);
         if (index !== shownScene) {
           shownScene = index;
           if (urlEl) urlEl.textContent = scenes[index]!.url;
