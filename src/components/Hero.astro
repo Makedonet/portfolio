@@ -4,6 +4,12 @@ import Icon from "./Icon.astro";
 import { phone } from "../data/site";
 import { typo } from "../lib/typo";
 
+// Почему стоит выбрать меня. Каждый пункт подтверждают работы из works.ts.
+const reasons = [
+  ["Всё делаю сам.", "Тексты, дизайн, код и хостинг - без менеджеров и посредников."],
+  ["Замечу сбой раньше вас.", "Сайт и заявки проверяются автоматически каждые 10 минут."],
+];
+
 // Слова заголовка поднимаются из-под маски по очереди (global.css, .hero-word).
 const title = ["Сайты"];
 const marked = ["под", "ключ"];
@@ -14,7 +20,7 @@ const subtitle = ["от идеи", "до первых", "заявок"];
   {/* Текст прижат к верху, а не центрирован по высоте: иначе, когда шрифт
       приезжает после первой отрисовки и высота строк чуть меняется, вся
       колонка съезжала бы на половину разницы — это сдвиг макета (CLS). */}
-  <div class="hero-fit container-page relative grid gap-6 pt-10 pb-10 sm:pt-14 lg:min-h-[calc(var(--hero-base)+var(--hero-spare))] lg:grid-cols-12 lg:gap-8 lg:pt-[calc(8.5rem+var(--hero-shift))] lg:pb-16">
+  <div class="hero-fit container-page relative grid gap-6 pt-10 pb-10 sm:pt-14 lg:min-h-[calc(var(--hero-base)+var(--hero-spare))] lg:grid-cols-12 lg:gap-8 lg:pt-[calc(3.5rem+var(--hero-shift))] lg:pb-16">
     <div class="relative z-[3] lg:col-span-7">
       <h1 id="hero-title" class="font-display font-extrabold">
         <span class="block text-[clamp(4.5rem,25vw,6.25rem)] leading-[0.95] sm:text-[7rem] lg:text-[6.25rem] xl:text-[7.5rem]">
@@ -57,13 +63,21 @@ const subtitle = ["от идеи", "до первых", "заявок"];
           }
         </span>
       </h1>
-      <p
-        class="mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-2 sm:text-xl sm:leading-relaxed"
-        set:html={typo(
-          "Меня зовут Максим. Я беру на себя весь проект: структуру и тексты, дизайн, разработку, приём заявок, аналитику, хостинг и поддержку. Вы получаете быстрый сайт, с которого заявки доходят до вас без потерь.",
-        )}
-      />
-      <div class="mt-9 flex flex-wrap items-center gap-3">
+      {/* Главный довод: результат заказчика. Цифры — из кейса mc-project в works.ts. */}
+      <a href="#works" class="mt-6 block max-w-[42rem] rounded-2xl bg-ink px-5 py-4 text-paper sm:px-6">
+        <span class="block font-display text-[2.125rem] leading-none font-bold text-accent sm:text-[2.75rem]" set:html={typo("14 заявок на ~300 млн рублей")} />
+        <span class="mt-2 block text-[0.9375rem] leading-snug text-muted-dark sm:text-base" set:html={typo("С июля через сайт, который я сделал для немецкого концерна MC-Bauchemie")} />
+      </a>
+      <ul class="mt-5 grid max-w-[42rem] gap-2.5 text-base leading-snug text-ink-2 sm:text-[1.0625rem]">
+        {
+          reasons.map(([title, text]) => (
+            <li>
+              <b class="font-bold text-ink" set:html={typo(title)} /> <span set:html={typo(text)} />
+            </li>
+          ))
+        }
+      </ul>
+      <div class="mt-7 flex flex-wrap items-center gap-3">
         <a href="#contact" class="btn btn-primary">Обсудить проект</a>
         <a href="#works" class="btn btn-secondary">
           Посмотреть работы
