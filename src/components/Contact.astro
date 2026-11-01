@@ -13,12 +13,14 @@ const max = contact("max");
 <section aria-labelledby="contact-title" id="contact" class="on-dark relative isolate overflow-clip bg-ink text-paper">
   <div class="container-page grid gap-14 py-20 sm:py-28 lg:grid-cols-12 lg:gap-10">
     <div class="lg:col-span-7">
-      <h2 id="contact-title" class="font-display text-[3.25rem] leading-none font-bold text-balance sm:text-[5.5rem]" data-split>
+      {/* Тень цвета фона на нём не видна, а от точек света буквы отделяет. */}
+      <h2 id="contact-title" class="font-display text-[3.25rem] leading-none font-bold text-balance [text-shadow:0_0_0.16em_var(--color-ink)] sm:text-[5.5rem]" data-split>
         Обсудим ваш сайт
       </h2>
       <p
         class="mt-6 max-w-xl text-lg leading-relaxed text-muted-dark"
         data-fade
+        data-light-calm
         set:html={typo(
           "Позвоните или напишите в мессенджер - отвечу, задам несколько вопросов и подскажу, сколько это займёт и сколько будет стоить.",
         )}

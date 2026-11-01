@@ -4,14 +4,20 @@
 // переходят из блока в блок без шва.
 // Сгусток — цепочка точек: голова тянется к цели на пружине, остальные за ней,
 // на скорости получается хвост. Цель — курсор или палец, а без них он сам бродит
-// по видимой части блоков. Нажатие пускает по точкам волну. Буквы имени в подвале
-// набирают вес и теплеют, когда свет проходит за ними.
+// по видимой части блоков. Нажатие стягивает сгусток в плотный шар, и он разряжается
+// кольцом, а потом свет отрастает заново. Буквы имени в подвале набирают вес и
+// теплеют, когда свет проходит за ними. Вокруг мелкого текста (data-light-calm)
+// точки сходят на нет: это подложка из самого растра, контраст как на чистом фоне.
 // Палец только смотрим (слушатели пассивные): вертикальный свайп листает страницу.
 // Считается, только пока блоки на экране. Нет WebGL — холстов нет, буквы работают.
 
 const LINKS = 6;
 const RIPPLES = 4;
-const RIPPLE_LIFE = 1.7; // с
+const RIPPLE_LIFE = 1.2; // с
+/** Сколько сгусток стягивается перед выстрелом, с. */
+const CHARGE = 0.2;
+/** Участков с мелким текстом на контакты и подвал вместе. */
+const CALMS = 3;
 /** Вес буквы вдали от света и прямо перед ним. */
 const WEIGHT_MIN = 300;
 const WEIGHT_MAX = 900;
@@ -27,10 +33,11 @@ precision highp float;
 precision mediump float;
 #endif
 uniform vec2 uOrigin;
-uniform float uHeight, uDpr, uCell, uTime, uHeat, uWave;
+uniform float uHeight, uDpr, uCell, uTime, uHeat, uWave, uLoose, uPunch;
 uniform vec3 uBound;
 uniform vec4 uChain[${LINKS}];
 uniform vec3 uRipple[${RIPPLES}];
+uniform vec4 uCalm[${CALMS}];
 
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -50,6 +57,15 @@ float field(vec2 p) {
   }
   return f;
 }
+// 0 на тексте и рядом с ним, 1 дальше 44 пикселей от него.
+float calm(vec2 p) {
+  float m = 1.;
+  for (int i = 0; i < ${CALMS}; i++) {
+    vec2 q = abs(p - uCalm[i].xy) - uCalm[i].zw;
+    m = min(m, smoothstep(0., 44., length(max(q, 0.)) + min(max(q.x, q.y), 0.)));
+  }
+  return m;
+}
 
 void main() {
   vec2 p = vec2(gl_FragCoord.x, uHeight - gl_FragCoord.y) / uDpr + uOrigin;
@@ -63,7 +79,7 @@ void main() {
   vec2 warp = vec2(noise(q + vec2(0., uTime * .1)), noise(q + vec2(5.2, -uTime * .09))) - .5;
   vec2 fine = q * 2.3 + warp * 2.;
   warp += .3 * (vec2(noise(fine + vec2(uTime * .13, 0.)), noise(fine + vec2(3.1, uTime * .11))) - .5);
-  warp *= 230.;
+  warp *= 230. * uLoose;
 
   // Центр точки растра: у точки один тон на всю её площадь, как в печати.
   const float s = .70710678;
@@ -78,23 +94,27 @@ void main() {
   tone *= mix(.82, 1.08, noise(center / 150. + warp / 300. + uTime * .06));
   tone *= .92 + .16 * hash(id * .01);
 
+  // Кольцо: вылетает быстро и тормозит, спереди край резкий, сзади шлейф.
+  float swell = 0.;
   for (int i = 0; i < ${RIPPLES}; i++) {
     float age = uRipple[i].z;
     if (age < 0.) continue;
-    float radius = 90. + age * uWave;
-    float d = distance(center, uRipple[i].xy) - radius;
-    tone += .5 * exp(-d * d / 1800.) * pow(1. - age / ${RIPPLE_LIFE.toFixed(1)}, 1.6);
+    float life = age / ${RIPPLE_LIFE.toFixed(1)};
+    float d = distance(center, uRipple[i].xy) - 40. - uWave * (1. - pow(1. - life, 3.));
+    swell += exp(-d * d / (d > 0. ? 500. : 9000.)) * pow(1. - life, 1.3);
   }
-  tone = clamp(tone, 0., 1.);
+  float quiet = calm(center);
+  tone = clamp(tone + swell * .95, 0., 1.) * quiet;
 
-  float radius = sqrt(tone) * .44;
+  // В шаре и на кольце точки разрастаются и почти сливаются.
+  float radius = sqrt(tone) * (.44 + .22 * uPunch + .2 * min(swell, 1.));
   float aa = 1. / (uCell * uDpr);
   float dotMask = (1. - smoothstep(radius - aa, radius + aa, length(uv))) * step(.02, tone);
 
   // Мягкое свечение под точками: шум убирает ступеньки на тёмном фоне.
   float glow = 1. - exp(-field(p + warp) * .5 * uHeat);
-  glow *= glow * .1;
-  float alpha = 1. - (1. - glow) * (1. - dotMask * (.3 + .55 * tone));
+  glow *= glow * .1 * quiet;
+  float alpha = 1. - (1. - glow) * (1. - dotMask * (.3 + .55 * tone + .15 * uPunch));
   alpha += (hash(gl_FragCoord.xy * .37) - .5) * step(.002, alpha) * 2.5 / 255.;
   vec3 color = mix(vec3(.86, .5, .07), vec3(1., .831, .231), smoothstep(.1, .55, tone));
   gl_FragColor = vec4(color * alpha, alpha);
@@ -138,10 +158,9 @@ function createSurface(el: HTMLElement): Surface | null {
   gl.clearColor(0, 0, 0, 0);
 
   const uniforms = Object.fromEntries(
-    ["uOrigin", "uHeight", "uDpr", "uCell", "uTime", "uHeat", "uWave", "uBound", "uChain", "uRipple"].map((name) => [
-      name,
-      gl.getUniformLocation(program, name),
-    ]),
+    ["uOrigin", "uHeight", "uDpr", "uCell", "uTime", "uHeat", "uWave", "uLoose", "uPunch", "uBound", "uChain", "uRipple", "uCalm"].map(
+      (name) => [name, gl.getUniformLocation(program, name)],
+    ),
   );
   el.prepend(canvas);
   return { el, canvas, gl, uniforms, sized: false, shown: false };
@@ -155,6 +174,7 @@ export function initLight(): () => void {
   const letters = [...footer.querySelectorAll<HTMLElement>(".footer-letter")];
   const shownWeight = letters.map(() => WEIGHT_MIN);
   const shownWarm = letters.map(() => 0);
+  const calmBlocks = blocks.flatMap((block) => [...block.querySelectorAll<HTMLElement>("[data-light-calm]")]).slice(0, CALMS);
 
   // Холсты — при первом приближении к блокам: до них многие не долистывают.
   let surfaces: Surface[] = [];
@@ -168,7 +188,14 @@ export function initLight(): () => void {
   const velocity = { x: 0, y: 0 };
   const chainData = new Float32Array(LINKS * 4);
   const rippleData = new Float32Array(RIPPLES * 3).fill(-1);
+  const calmData = new Float32Array(CALMS * 4).fill(-1e5);
   let nextRipple = 0;
+  /** Нажатие, которое ещё не выстрелило: куда стягиваться и сколько осталось. */
+  let charge: { x: number; y: number; left: number } | null = null;
+  /** Насколько сгусток стянут в шар: 0 — обычный, 1 — шар. */
+  let gather = 0;
+  /** Сколько силы ушло в кольцо: сразу после выстрела 1, потом свет набирает её заново. */
+  let spent = 0;
   /** Где курсор или палец — в координатах окна: прокрутка уносит блок, свет догоняет. */
   let pointer: { x: number; y: number } | null = null;
   let heat = 0;
@@ -233,12 +260,36 @@ export function initLight(): () => void {
       chain[i]!.y += (chain[i - 1]!.y - chain[i]!.y) * follow;
     }
 
+    // Нажатие: вся цепочка быстро стягивается в точку, затем выстрел.
+    if (charge) {
+      gather += (1 - gather) * (1 - Math.exp(-dt * 30));
+      const pull = 1 - Math.exp(-dt * 34);
+      chain.forEach((link) => {
+        link.x += (charge!.x - link.x) * pull;
+        link.y += (charge!.y - link.y) * pull;
+      });
+      velocity.x = velocity.y = 0;
+      charge.left -= dt;
+      if (charge.left <= 0) {
+        rippleData[nextRipple * 3] = charge.x;
+        rippleData[nextRipple * 3 + 1] = charge.y;
+        rippleData[nextRipple * 3 + 2] = 0;
+        nextRipple = (nextRipple + 1) % RIPPLES;
+        charge = null;
+        spent = 1;
+      }
+    } else {
+      gather *= Math.exp(-dt * 2.6);
+      spent *= Math.exp(-dt * 2.2);
+    }
+
     // На скорости и под рукой свет горит ярче, сам по себе — вполсилы.
     const speed = Math.hypot(velocity.x, velocity.y);
     const wantHeat = (inside ? 0.86 : 0.62) + Math.min(speed / 2600, 0.34);
     heat += (wantHeat - heat) * (1 - Math.exp(-dt * 3));
     const breath = 1 + 0.06 * Math.sin(time * 0.9);
-    const size = Math.min(105 + zone.width * 0.075, 200) * breath;
+    const size = Math.min(105 + zone.width * 0.075, 200) * breath * (1 - 0.8 * gather);
+    const punch = gather * (1 - spent);
 
     let reach = 0;
     chain.forEach((link, i) => {
@@ -261,6 +312,14 @@ export function initLight(): () => void {
     }
     const bound = rippling ? 1e5 : reach * 2.2 + 240;
 
+    calmBlocks.forEach((block, i) => {
+      const r = block.getBoundingClientRect();
+      calmData[i * 4] = r.left + r.width / 2 - zone.left;
+      calmData[i * 4 + 1] = r.top + r.height / 2 - zone.top;
+      calmData[i * 4 + 2] = r.width / 2 + 6;
+      calmData[i * 4 + 3] = r.height / 2 + 6;
+    });
+
     surfaces.forEach((surface) => {
       const rect = surface.el === contact ? zone : footerRect;
       if (rect.bottom < 0 || rect.top > innerHeight) return;
@@ -277,11 +336,14 @@ export function initLight(): () => void {
       gl.uniform1f(u.uDpr!, dpr);
       gl.uniform1f(u.uCell!, zone.width < 640 ? 6 : 8);
       gl.uniform1f(u.uTime!, time);
-      gl.uniform1f(u.uHeat!, heat * ignition);
-      gl.uniform1f(u.uWave!, Math.min(zone.width * 0.8, 620));
+      gl.uniform1f(u.uHeat!, heat * ignition * (1 + 1.6 * punch) * (1 - 0.9 * spent));
+      gl.uniform1f(u.uWave!, Math.hypot(zone.width, innerHeight) * 0.75);
+      gl.uniform1f(u.uLoose!, 1 - 0.9 * gather);
+      gl.uniform1f(u.uPunch!, punch);
       gl.uniform3f(u.uBound!, chain[0]!.x, chain[0]!.y, bound);
       gl.uniform4fv(u.uChain!, chainData);
       gl.uniform3fv(u.uRipple!, rippleData);
+      gl.uniform4fv(u.uCalm!, calmData);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (!surface.shown) {
@@ -300,7 +362,7 @@ export function initLight(): () => void {
         letters.forEach((letter, i) => {
           const r = letter.getBoundingClientRect();
           const d = Math.hypot(hx - (r.left + r.width / 2), hy - (name.top + name.height / 2));
-          const closeness = Math.max(0, 1 - d / near) * ignition;
+          const closeness = Math.max(0, 1 - d / near) * ignition * (1 - spent);
           const eased = closeness * closeness * (3 - 2 * closeness);
           const weight = Math.round(WEIGHT_MIN + (WEIGHT_MAX - WEIGHT_MIN) * eased);
           // Смена веса — это раскладка: мелкие изменения не стоят её.
@@ -353,13 +415,11 @@ export function initLight(): () => void {
     pointer = touch ? { x: touch.clientX, y: touch.clientY } : null;
   };
   const onClick = (event: MouseEvent) => {
-    // Нажатие с клавиатуры без координат: волне неоткуда идти.
-    if (!event.detail) return;
+    // Нажатие с клавиатуры без координат: кольцу неоткуда идти. Пока сгусток
+    // стягивается, новые нажатия ждут выстрела.
+    if (!event.detail || charge) return;
     const zone = contact.getBoundingClientRect();
-    rippleData[nextRipple * 3] = event.clientX - zone.left;
-    rippleData[nextRipple * 3 + 1] = event.clientY - zone.top;
-    rippleData[nextRipple * 3 + 2] = 0;
-    nextRipple = (nextRipple + 1) % RIPPLES;
+    charge = { x: event.clientX - zone.left, y: event.clientY - zone.top, left: CHARGE };
   };
   const passive = { passive: true };
   blocks.forEach((block) => {
