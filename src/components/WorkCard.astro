@@ -1,8 +1,7 @@
 ---
-// Превью кейса на главной: окно сайта, отрасль, пара фраз о сайте и главные
-// цифры. Целиком кейс — на своей странице (pages/works/[id].astro), туда ведут
-// и кнопка, и клик по окну. Первый кейс — крупно, рядом с окном телефон и
-// результат для бизнеса тёмной карточкой; остальные — карточками в ряд.
+// Главный кейс на главной: окно сайта с телефоном, отрасль, пара фраз о сайте и
+// результат для бизнеса тёмной карточкой. Целиком кейс — на своей странице
+// (pages/works/[id].astro), туда ведут и кнопка, и клик по окну.
 // Окно помечено data-vt: при переходе на страницу кейса оно перетекает в окно
 // там (Layout.astro, View Transitions).
 import LiveWindow from "./LiveWindow.astro";
@@ -13,35 +12,27 @@ import { typo } from "../lib/typo";
 
 interface Props {
   work: Work;
-  index: number;
-  featured?: boolean;
 }
 
-const { work, index, featured = false } = Astro.props;
+const { work } = Astro.props;
 const headingId = `work-${work.id}`;
 const href = caseUrl(work.id);
 const figures = keyFigures(work);
-const phone = featured ? work.screens.mobile : undefined;
-const n = String(index + 1).padStart(2, "0");
+const phone = work.screens.mobile;
 ---
 
-<article
-  id={`case-${work.id}`}
-  aria-labelledby={headingId}
-  class:list={[featured ? "grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-14" : "flex flex-col lg:row-span-4 lg:grid lg:grid-rows-subgrid lg:gap-y-0"]}
-  data-case
->
-  <div class:list={["relative", featured && "lg:col-span-7"]} data-live-group data-tilt={featured ? 5 : 4}>
+<article id={`case-${work.id}`} aria-labelledby={headingId} class="grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-14" data-case>
+  <div class="relative lg:col-span-7" data-live-group data-tilt="5">
     <div class:list={["relative", phone && "pr-[9%] pb-8 sm:pb-10"]} data-tilt-target>
       <div data-case-visual data-vt={work.id}>
         <LiveWindow
           scenes={work.screens.desktop}
           device="desktop"
-          sizes={featured ? "(min-width: 1280px) 40rem, (min-width: 1024px) 52vw, 92vw" : "(min-width: 1280px) 23rem, (min-width: 1024px) 29vw, 92vw"}
+          sizes="(min-width: 1280px) 40rem, (min-width: 1024px) 52vw, 92vw"
           label={`Сайт ${work.urlLabel} листается сам${work.screens.desktop.length > 1 ? ", по нескольким страницам" : ""}`}
           href={href}
           toggle={work.urlLabel}
-          delay={0.3 + index * 0.7}
+          delay={0.3}
         />
       </div>
       {
@@ -63,13 +54,10 @@ const n = String(index + 1).padStart(2, "0");
     </div>
   </div>
 
-  {/* У карточек в ряд строки общие с соседями (subgrid): описание, цифры
-      и ссылка стоят на одной высоте во всех трёх, сколько бы строк ни заняли
-      описание и подписи цифр. */}
-  <div class:list={[featured ? "lg:col-span-5" : "contents"]}>
-    <div class:list={[!featured && "mt-6"]}>
+  <div class="lg:col-span-5">
+    <div>
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-fade>
-        <span class="text-sm text-muted">{n}&ensp;{work.industry}</span>
+        <span class="text-sm text-muted">{work.industry}</span>
         <span
           class:list={[
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
@@ -80,35 +68,16 @@ const n = String(index + 1).padStart(2, "0");
           {work.status.label}
         </span>
       </div>
-      <h3
-        id={headingId}
-        class:list={[
-          "mt-3 font-display leading-[1.02] font-bold text-balance",
-          featured ? "text-[2.75rem] sm:text-[4rem]" : "text-[2.25rem]",
-        ]}
-        data-split
-        set:html={typo(work.title)}
-      />
-      <p class:list={["mt-3 leading-relaxed text-ink-2", featured && "sm:text-lg"]} data-fade set:html={typo(work.summary)} />
+      <h3 id={headingId} class="mt-3 font-display text-[2.75rem] leading-[1.02] font-bold text-balance sm:text-[4rem]" data-split set:html={typo(work.title)} />
+      <p class="mt-3 leading-relaxed text-ink-2 sm:text-lg" data-fade set:html={typo(work.summary)} />
     </div>
 
-    <dl
-      class:list={[
-        "grid grid-cols-2 gap-x-6 gap-y-4",
-        featured ? "case-result on-dark" : "mt-6 border-t border-line pt-5",
-      ]}
-      data-fade
-    >
+    <dl class="case-result on-dark grid grid-cols-2 gap-x-6 gap-y-4" data-fade>
       {
         figures.map((figure) => (
           <div class="flex flex-col gap-1.5">
-            <dt class:list={["order-2 text-sm leading-snug", featured ? "text-muted-dark" : "text-muted"]} set:html={typo(figure.label)} />
-            <dd
-              class:list={[
-                "order-1 font-display leading-none font-bold whitespace-nowrap",
-                featured ? "text-[clamp(2.25rem,11vw,3rem)] text-accent sm:text-[3.75rem]" : "text-[2.5rem]",
-              ]}
-            >
+            <dt class="order-2 text-sm leading-snug text-muted-dark" set:html={typo(figure.label)} />
+            <dd class="order-1 font-display text-[clamp(2.25rem,11vw,3rem)] leading-none font-bold whitespace-nowrap text-accent sm:text-[3.75rem]">
               <MetricValue value={figure.value} />
             </dd>
           </div>
@@ -116,31 +85,17 @@ const n = String(index + 1).padStart(2, "0");
       }
     </dl>
 
-    <div class:list={["flex flex-wrap items-center gap-x-6 gap-y-3", featured ? "mt-8" : "mt-6"]} data-fade>
-      {
-        featured ? (
-          <a href={href} class="btn btn-primary">
-            Читать кейс
-            <span class="sr-only">: {work.title}</span>
-            <Icon name="arrow-right" class="size-4" />
-          </a>
-        ) : (
-          <a href={href} class="group inline-flex min-h-11 items-center gap-2 font-semibold">
-            <span class="link-line">Читать кейс</span>
-            <span class="sr-only">: {work.title}</span>
-            <Icon name="arrow-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </a>
-        )
-      }
-      {
-        featured && (
-          <a href={work.url} target="_blank" rel="noopener noreferrer" class="group inline-flex min-h-11 items-center gap-2 text-muted hover:text-ink">
-            <span class="link-line text-[0.9375rem]">{work.urlLabel}</span>
-            <Icon name="arrow-up-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
-            <span class="sr-only">(откроется в новой вкладке)</span>
-          </a>
-        )
-      }
+    <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3" data-fade>
+      <a href={href} class="btn btn-primary">
+        Читать кейс
+        <span class="sr-only">: {work.title}</span>
+        <Icon name="arrow-right" class="size-4" />
+      </a>
+      <a href={work.url} target="_blank" rel="noopener noreferrer" class="group inline-flex min-h-11 items-center gap-2 text-muted hover:text-ink">
+        <span class="link-line text-[0.9375rem]">{work.urlLabel}</span>
+        <Icon name="arrow-up-right" class="size-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+        <span class="sr-only">(откроется в новой вкладке)</span>
+      </a>
     </div>
   </div>
 </article>

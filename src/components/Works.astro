@@ -1,41 +1,36 @@
 ---
-// Работы на главной — превью: первый кейс крупно, остальные карточками в ряд,
-// ниже демо. Подробности каждого кейса — на его странице (WorkCard.astro).
+// Работы на главной: главный кейс крупно (WorkCard.astro), остальные — строками
+// (WorksIndex.astro), демо — ссылками. Подробности каждого кейса — на его странице.
 import SectionHead from "./SectionHead.astro";
 import WorkCard from "./WorkCard.astro";
-import DemoCard from "./DemoCard.astro";
+import WorksIndex from "./WorksIndex.astro";
+import Icon from "./Icon.astro";
 import { demos, works } from "../data/works";
-import { typo } from "../lib/typo";
 
 const [lead, ...rest] = works;
 ---
 
-<section aria-labelledby="works-title" id="works" class="pt-20 sm:pt-28">
+<section aria-labelledby="works-title" id="works" class="pt-16 sm:pt-24">
   <div class="container-page">
-    <SectionHead
-      id="works-title"
-      title="Сайты для реального бизнеса"
-      intro="Три сайта работающих компаний и концепт редизайна. Сайты в окнах листаются сами, а на компьютере их можно прокрутить колёсиком, как настоящие. Все цифры - из реальных замеров и данных заказчиков."
-    />
-
-    <div class="mt-12 border-t border-line py-14 sm:mt-16 sm:py-16">
-      {lead && <WorkCard work={lead} index={0} featured />}
+    <SectionHead id="works-title" title="Сайты для реального бизнеса" intro="Все цифры - из реальных замеров и данных заказчиков." />
+    <div class="py-10 sm:py-14">
+      {lead && <WorkCard work={lead} />}
     </div>
+  </div>
 
-    <div class="grid gap-16 border-t border-line py-14 sm:py-16 lg:grid-cols-3 lg:gap-10 xl:gap-12">
-      {rest.map((work, i) => <WorkCard work={work} index={i + 1} />)}
-    </div>
+  <WorksIndex works={rest} />
 
-    <div class="grid gap-16 border-t border-line pt-14 pb-20 sm:pt-16 sm:pb-28 lg:grid-cols-3 lg:gap-10 xl:gap-12">
-      <div>
-        <h3 class="font-display text-[2.75rem] leading-none font-bold sm:text-[3.25rem]" data-split>Демо-проекты</h3>
-        <p
-          class="mt-4 max-w-sm leading-relaxed text-ink-2"
-          data-fade
-          set:html={typo("Два лендинга в демо-режиме: можно открыть сайт и посмотреть код на GitHub.")}
-        />
-      </div>
-      {demos.map((demo, index) => <DemoCard demo={demo} index={index} />)}
-    </div>
+  <div class="container-page flex flex-wrap items-center gap-x-8 gap-y-1 py-5 text-[0.9375rem]">
+    <p class="text-muted">Ещё демо:</p>
+    {
+      demos.map((demo) => (
+        <a href={demo.url} target="_blank" rel="noopener noreferrer" class="group inline-flex min-h-11 items-center gap-2">
+          <span class="link-line font-semibold">{demo.title}</span>
+          <span class="text-muted">{demo.kind}</span>
+          <Icon name="arrow-up-right" class="size-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+          <span class="sr-only">(откроется в новой вкладке)</span>
+        </a>
+      ))
+    }
   </div>
 </section>

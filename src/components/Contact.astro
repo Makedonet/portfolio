@@ -5,13 +5,6 @@ import { contact, phone } from "../data/site";
 import { typo } from "../lib/typo";
 import maxIcon from "../assets/icons/max.png";
 
-const brief = [
-  "чем занимается ваш бизнес и кто ваши клиенты",
-  "что сайт должен делать: продавать, собирать заявки, рассказывать о компании",
-  "есть ли сайт сейчас и какие сайты вам нравятся",
-  "к какому сроку нужен запуск",
-];
-
 const telegram = contact("telegram");
 const whatsapp = contact("whatsapp");
 const max = contact("max");
@@ -29,21 +22,9 @@ const max = contact("max");
         class="mt-6 max-w-xl text-lg leading-relaxed text-muted-dark"
         data-fade
         set:html={typo(
-          "Позвоните или напишите в мессенджер - отвечу, задам несколько уточняющих вопросов и предложу, с чего начать. Чтобы разговор сразу был предметным, заранее подумайте:",
+          "Позвоните или напишите в мессенджер - отвечу, задам несколько вопросов и подскажу, сколько это займёт и сколько будет стоить.",
         )}
       />
-      <ul class="mt-6 max-w-xl space-y-3" data-stagger>
-        {
-          brief.map((item) => (
-            <li class="flex gap-3 leading-snug">
-              <span class="mt-0.5" data-draw>
-                <Icon name="check" class="size-[1.125rem] text-accent" />
-              </span>
-              <span set:html={typo(item)} />
-            </li>
-          ))
-        }
-      </ul>
     </div>
 
     <div class="lg:col-span-5 lg:pt-14" data-fade>

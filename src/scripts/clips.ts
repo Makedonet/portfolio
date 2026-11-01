@@ -1,24 +1,32 @@
-// Ролики шагов в блоке «Как работаю» (components/Process.astro).
-// - Файл качается, когда ролик подходит к экрану; до того виден постер.
-// - Играет, только пока ролик на экране; вернулся на экран — история с начала.
-// - Кнопка останавливает все ролики блока: автодвижение дольше пяти секунд
-//   должно останавливаться (WCAG 2.2.2). С «экономией трафика» ролики сами не
-//   запускаются, но кнопка их запустит.
-// Вызывается только без «уменьшить движение»: иначе остаются постеры.
+// Ролики шагов в блоке «Как работаю» (components/Process.astro): один кадр и
+// пять серий, в которых один сайт проходит путь от разговора до запуска.
+// - Серия доиграла — включается следующая, после последней снова первая.
+//   Линия у идущего шага заполняется вслед за роликом.
+// - Нажатие на шаг сразу показывает его серию.
+// - Файл качается, когда кадр подходит к экрану; до того виден постер.
+// - Играет, только пока кадр на экране; вернулся на экран — серия с начала.
+// - Кнопка останавливает ролик: автодвижение дольше пяти секунд должно
+//   останавливаться (WCAG 2.2.2). С «экономией трафика» ролик сам не запускается,
+//   но кнопка его запустит.
+// animate = false — «уменьшить движение»: только постеры, их меняет нажатие на шаг.
 
-type Clip = { root: HTMLElement; video: HTMLVideoElement; visible: boolean; loaded: boolean };
+type Clip = { root: HTMLElement; video: HTMLVideoElement; loaded: boolean };
 
-export function initClips(): () => void {
-  const clips: Clip[] = [...document.querySelectorAll<HTMLElement>("[data-clip]")].map((root) => ({
+export function initClips(animate: boolean): () => void {
+  const frame = document.querySelector<HTMLElement>("[data-clip-frame]");
+  if (!frame) return () => {};
+  const clips: Clip[] = [...frame.querySelectorAll<HTMLElement>("[data-clip]")].map((root) => ({
     root,
     video: root.querySelector("video")!,
-    visible: false,
     loaded: false,
   }));
-  if (!clips.length) return () => {};
+  const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
+  const stepButtons = steps.map((step) => step.querySelector<HTMLButtonElement>("[data-step-button]")!);
 
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   let paused = Boolean(connection?.saveData);
+  let visible = false;
+  let current = 0;
 
   const load = (clip: Clip) => {
     if (clip.loaded) return;
@@ -26,74 +34,103 @@ export function initClips(): () => void {
     clip.video.querySelectorAll("source").forEach((source) => {
       source.src = source.dataset.src!;
     });
+    clip.video.preload = "auto";
     clip.video.load();
   };
 
-  const sync = (clip: Clip) => {
-    if (clip.visible && !paused) {
+  const sync = () => {
+    const clip = clips[current]!;
+    if (animate && visible && !paused) {
       load(clip);
+      // Следующая серия качается заранее, чтобы смена шла без паузы на постере.
+      load(clips[(current + 1) % clips.length]!);
       // Автозапуск могут запретить (режим энергосбережения): тогда останется постер.
       clip.video.play().catch(() => {});
     } else clip.video.pause();
   };
 
-  const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-clip-toggle]")];
-  const drawButtons = () =>
-    buttons.forEach((button) => {
-      const label = paused ? button.dataset.labelPlay : button.dataset.labelPause;
-      if (label) button.setAttribute("aria-label", label);
-      button.querySelector(".clip-pause")?.classList.toggle("hidden", paused);
-      button.querySelector(".clip-play")?.classList.toggle("hidden", !paused);
+  const show = (index: number) => {
+    clips[current]!.video.pause();
+    current = index;
+    const { video } = clips[index]!;
+    if (video.currentTime > 0) video.currentTime = 0;
+    clips.forEach((clip, i) => clip.root.classList.toggle("is-current", i === index));
+    steps.forEach((step, i) => {
+      step.classList.toggle("is-current", i === index);
+      step.classList.toggle("is-done", i < index);
+      step.style.setProperty("--p", "0");
     });
-  drawButtons();
+    stepButtons.forEach((button, i) => (i === index ? button.setAttribute("aria-current", "step") : button.removeAttribute("aria-current")));
+    sync();
+  };
+
+  const clicks = stepButtons.map((button, i) => {
+    const onClick = () => show(i);
+    button.addEventListener("click", onClick);
+    return () => button.removeEventListener("click", onClick);
+  });
+  if (!animate) return () => clicks.forEach((stop) => stop());
+
+  const toggleButton = frame.querySelector<HTMLButtonElement>("[data-clip-toggle]")!;
+  const drawButton = () => {
+    const label = paused ? toggleButton.dataset.labelPlay : toggleButton.dataset.labelPause;
+    if (label) toggleButton.setAttribute("aria-label", label);
+    toggleButton.querySelector(".clip-pause")?.classList.toggle("hidden", paused);
+    toggleButton.querySelector(".clip-play")?.classList.toggle("hidden", !paused);
+  };
+  drawButton();
   const toggle = () => {
     paused = !paused;
-    drawButtons();
-    clips.forEach(sync);
+    drawButton();
+    sync();
   };
-  buttons.forEach((button) => button.addEventListener("click", toggle));
+  toggleButton.addEventListener("click", toggle);
 
   // Ролик проявляется над постером, когда пошли кадры.
   const reveal = (event: Event) => (event.target as HTMLVideoElement).classList.add("is-playing");
-  clips.forEach((clip) => clip.video.addEventListener("playing", reveal));
+  const advance = () => show((current + 1) % clips.length);
+  const track = (event: Event) => {
+    const video = event.target as HTMLVideoElement;
+    if (video === clips[current]!.video && video.duration) steps[current]?.style.setProperty("--p", String(video.currentTime / video.duration));
+  };
+  clips.forEach(({ video }) => {
+    video.addEventListener("playing", reveal);
+    video.addEventListener("ended", advance);
+    video.addEventListener("timeupdate", track);
+  });
 
   const near = new IntersectionObserver(
     (entries) => {
-      if (paused) return;
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        near.unobserve(entry.target);
-        const clip = clips.find((c) => c.root === entry.target);
-        if (clip) load(clip);
-      });
+      if (paused || !entries.some((entry) => entry.isIntersecting)) return;
+      near.disconnect();
+      load(clips[current]!);
     },
     { rootMargin: "600px 0px" },
   );
-  // Половина ролика в кадре — смотрят. Ушёл совсем — следующий показ с начала.
+  // Половина кадра на экране — смотрят. Ушёл совсем — следующий показ с начала серии.
   const seen = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        const clip = clips.find((c) => c.root === entry.target);
-        if (!clip) return;
-        clip.visible = entry.intersectionRatio >= 0.5;
-        if (entry.intersectionRatio === 0 && clip.video.currentTime > 0) clip.video.currentTime = 0;
-        sync(clip);
-      });
+    ([entry]) => {
+      if (!entry) return;
+      visible = entry.intersectionRatio >= 0.5;
+      const { video } = clips[current]!;
+      if (entry.intersectionRatio === 0 && video.currentTime > 0) video.currentTime = 0;
+      sync();
     },
     { threshold: [0, 0.5] },
   );
-  clips.forEach((clip) => {
-    near.observe(clip.root);
-    seen.observe(clip.root);
-  });
+  near.observe(frame);
+  seen.observe(frame);
 
   return () => {
     near.disconnect();
     seen.disconnect();
-    buttons.forEach((button) => button.removeEventListener("click", toggle));
-    clips.forEach((clip) => {
-      clip.video.removeEventListener("playing", reveal);
-      clip.video.pause();
+    clicks.forEach((stop) => stop());
+    toggleButton.removeEventListener("click", toggle);
+    clips.forEach(({ video }) => {
+      video.removeEventListener("playing", reveal);
+      video.removeEventListener("ended", advance);
+      video.removeEventListener("timeupdate", track);
+      video.pause();
     });
   };
 }

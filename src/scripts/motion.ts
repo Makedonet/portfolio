@@ -1,4 +1,4 @@
-// Движение страницы на GSAP: появление при прокрутке, счётчики, линия этапов,
+// Движение страницы на GSAP: появление при прокрутке, счётчики,
 // наклон и «магнит» при наведении, «живые окна», индекс работ.
 // Первый экран анимирован на CSS (global.css): он должен ожить сразу при
 // первой отрисовке, не дожидаясь скрипта. Всё остальное — здесь.
@@ -10,15 +10,11 @@
 //   data-draw — линия галочки прорисовывается;
 //   data-tilt + data-depth — наклон и глубина слоёв под курсором;
 //   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
-//   data-process — линия этапов и шаги (ролики шагов — scripts/clips.ts);
 //   data-progress — полоса прочитанного в шапке;
-//   data-marquee — ленты крест-накрест, разгоняются от прокрутки;
-//   data-manifesto — абзац проявляется по словам вслед за прокруткой;
-//   data-services — услуги и их сцены (scripts/services.ts);
 //   data-contact-glow — пятно света за курсором в контактах;
 //   data-footer-name — имя в подвале, буквы набирают вес у курсора.
-// Визитка первого экрана, наклейки, подсказка у курсора и индекс работ —
-// в своих модулях (badge, stickers, cursor, works-index). Запускает всё
+// Визитка первого экрана, наклейки, подсказка у курсора, индекс работ и ролики
+// шагов — в своих модулях (badge, stickers, cursor, works-index, clips). Запускает всё
 // boot.ts — после загрузки страницы.
 // «Уменьшить движение» — ничего из этого: страница видна как есть.
 import { gsap } from "gsap";
@@ -26,7 +22,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { initLiveWindows } from "./live";
 import { initClips } from "./clips";
-import { initServices } from "./services";
 import { initBadge } from "./badge";
 import { initStickers } from "./stickers";
 import { initCursor } from "./cursor";
@@ -295,144 +290,10 @@ function cases(onScreen: Set<Element>): Array<() => void> {
   });
 }
 
-function processLine() {
-  const root = document.querySelector<HTMLElement>("[data-process]");
-  const line = root?.querySelector<HTMLElement>("[data-process-line]");
-  if (!root || !line) return;
-  const steps = all("[data-step]", root);
-  // Шаг загорается, когда линия дошла до его кружка. Положение кружков вдоль
-  // линии: её размеры — из offset*, а не из getBoundingClientRect: линия сжата
-  // анимацией, и её рамка в начале нулевая.
-  const at = () => {
-    const box = root.getBoundingClientRect();
-    const start = box.top + line.offsetTop;
-    const length = line.offsetHeight || 1;
-    return steps.map((step) => {
-      const dot = (step.querySelector("[data-step-dot]") ?? step).getBoundingClientRect();
-      return (dot.top + dot.height / 2 - start) / length;
-    });
-  };
-  let positions = at();
-  gsap.fromTo(
-    line,
-    { scaleY: 0 },
-    {
-      scaleY: 1,
-      ease: "none",
-      scrollTrigger: {
-        trigger: root,
-        start: "top 75%",
-        end: "bottom 65%",
-        scrub: 0.6,
-        onRefresh: () => {
-          positions = at();
-        },
-        onUpdate: (self) => {
-          steps.forEach((step, i) => step.classList.toggle("is-active", self.progress >= (positions[i] ?? 0) - 0.01));
-        },
-      },
-    },
-  );
-}
-
 function progress() {
   const bar = document.querySelector<HTMLElement>("[data-progress]");
   if (!bar) return;
   gsap.to(bar, { scaleX: 1, ease: "none", scrollTrigger: { start: 0, end: "max", scrub: 0.3 } });
-}
-
-/** Ленты: скорость и направление — от прокрутки, крен — от скорости. */
-function marquee(): () => void {
-  const root = document.querySelector<HTMLElement>("[data-marquee]");
-  if (!root) return () => {};
-  const tracks = all("[data-marquee-track]", root).map((el) => ({ el, dir: Number(el.dataset.direction || 1), x: 0, width: 1 }));
-  const measure = () => tracks.forEach((t) => (t.width = (t.el.firstElementChild as HTMLElement).offsetWidth || 1));
-  measure();
-  let boost = 0;
-  let heading = 1;
-  let active = false;
-  ScrollTrigger.create({
-    trigger: root,
-    start: "top bottom",
-    end: "bottom top",
-    onToggle: (self) => (active = self.isActive),
-    onUpdate: (self) => {
-      boost = Math.max(boost, Math.min(Math.abs(self.getVelocity()) / 220, 14));
-      heading = self.direction;
-    },
-    onRefresh: measure,
-  });
-  const tick = (_time: number, deltaMs: number) => {
-    if (!active) return;
-    const dt = Math.min(deltaMs, 50) / 1000;
-    boost *= Math.pow(0.08, dt);
-    const skew = gsap.utils.clamp(-9, 9, boost * heading * 0.8);
-    tracks.forEach((t) => {
-      t.x -= t.dir * heading * (55 + boost * 70) * dt;
-      t.x %= t.width;
-      if (t.x > 0) t.x -= t.width;
-      t.el.style.transform = `translate3d(${t.x.toFixed(1)}px, 0, 0) skewX(${(skew * t.dir).toFixed(2)}deg)`;
-    });
-  };
-  gsap.ticker.add(tick);
-  return () => {
-    gsap.ticker.remove(tick);
-    tracks.forEach((t) => (t.el.style.transform = ""));
-  };
-}
-
-/** Абзац подхода: слова заливаются по очереди из контура, маркер
- *  дорисовывается. Контур — того же цвета, что текст: непрочитанное слово
- *  остаётся контрастным и читаемым. Разбивка, заливка и каждый маркер —
- *  отдельными задачами: вместе они занимали поток на 100 мс на медленном
- *  телефоне. autoSplit не нужен: разбивка только на слова от ширины не
- *  зависит. */
-function manifesto(): Array<() => void> {
-  const el = document.querySelector<HTMLElement>("[data-manifesto]");
-  if (!el) return [];
-  let words: Element[] = [];
-  // Для скринридера рядом есть обычный текст, разбивка спрятана целиком.
-  const split = () => {
-    const parts = SplitText.create(el, { ...keepNbsp, type: "words", wordsClass: "manifesto-word", aria: "none" }).words;
-    // Знак сразу за маркером («картинка.») SplitText делает отдельным словом, и
-    // он мог уехать на новую строку. Прилепить к слову перед ним.
-    words = parts.filter((word, i) => {
-      const before = parts[i - 1];
-      if (!before || !/^[.,:;!?]+$/.test(word.textContent ?? "")) return true;
-      before.textContent += word.textContent ?? "";
-      word.remove();
-      return false;
-    });
-  };
-  const fill = () => {
-    gsap.fromTo(
-      words,
-      // Начало — цвет бумаги, а не прозрачный: заливка закрывает внутренние
-      // линии обводки (global.css, .manifesto-word).
-      { color: "rgb(243 242 236)" },
-      {
-        color: "rgb(17 17 16)",
-        ease: "none",
-        stagger: 0.1,
-        scrollTrigger: { trigger: el, start: "top 82%", end: "bottom 48%", scrub: 0.5 },
-      },
-    );
-  };
-  // Маркер ищем в момент задачи: разбивка на слова перестраивает абзац.
-  const marks = [...el.querySelectorAll("[data-manifesto-mark]")].map((_, i) => () => {
-    const mark = all("[data-manifesto-mark]", el)[i];
-    if (!mark) return;
-    gsap.fromTo(
-      mark,
-      { backgroundSize: "0% 0.42em" },
-      {
-        backgroundSize: "100% 0.42em",
-        ease: "none",
-        scrollTrigger: { trigger: mark, start: "top 72%", end: "top 52%", scrub: 0.5 },
-      },
-    );
-  });
-  return [split, fill, ...marks];
 }
 
 /** Контакты: тёмный блок раскрывается из скруглённой карточки во всю ширину. */
@@ -665,10 +526,14 @@ export function init() {
     (ctx) => {
       const { motion, fine } = ctx.conditions as { motion: boolean; fine: boolean };
       const badge = document.querySelector<HTMLElement>("[data-badge]");
-      // Перевернуть визитку можно и без анимаций — это содержимое, не украшение.
+      // Перевернуть визитку и выбрать шаг можно и без анимаций — это содержимое, не украшение.
       if (!motion) {
         const stopBadge = badge ? initBadge(badge, false, fine) : () => {};
-        return () => stopBadge();
+        const stopClips = initClips(false);
+        return () => {
+          stopBadge();
+          stopClips();
+        };
       }
       // Класс включает то, что имеет смысл только при движении (кнопки паузы окон).
       document.documentElement.classList.add("motion-on");
@@ -687,9 +552,6 @@ export function init() {
             if (badge) stops.push(initBadge(badge, true, fine), initStickers(badge.closest("section") ?? badge));
             if (fine) stops.push(initCursor());
           },
-          // Закреплённый блок услуг добавляет странице высоты — он раньше
-          // всех триггеров ниже него, тогда они сразу считаются с его учётом.
-          initServices,
           () => {
             header();
             progress();
@@ -703,16 +565,13 @@ export function init() {
           () => stops.push(gauges(onScreen)),
           () => stops.push(checkmarks(onScreen)),
           ...headings(onScreen),
-          ...manifesto(),
           ...cases(onScreen),
-          processLine,
           contactReveal,
           () => {
             stops.push(initLiveWindows(fine));
-            stops.push(initClips());
+            stops.push(initClips(true));
             if (fine) stops.push(hover());
           },
-          () => stops.push(marquee()),
           () => stops.push(footerName(fine)),
         ];
         for (const task of tasks) {

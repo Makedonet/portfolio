@@ -1,5 +1,5 @@
 ---
-// Индекс работ под первым экраном: клиент, отрасль и главное, что дал сайт, —
+// Остальные работы под главным кейсом: клиент, отрасль и главное, что дал сайт, —
 // по строке на работу. Строка ведёт на страницу кейса. При наведении мышью
 // строка заливается жёлтым, а за курсором плывёт превью сайта
 // (scripts/works-index.ts): пружина, наклон от скорости, смена картинки
@@ -7,40 +7,35 @@
 // переходе перетекает в окно на странице кейса (data-vt, Layout.astro).
 import { Picture, getImage } from "astro:assets";
 import Icon from "./Icon.astro";
-import { caseUrl, works } from "../data/works";
+import { caseUrl, type Work } from "../data/works";
 import { scene } from "../data/live";
 import { typo } from "../lib/typo";
 
+interface Props {
+  works: Work[];
+}
+
+const { works } = Astro.props;
+
 const rows = await Promise.all(
-  works.map(async (work, i) => {
+  works.map(async (work) => {
     const poster = scene(work.screens.desktop[0]!).poster;
     // Превью нужно только под курсором — адреса в data-атрибутах, грузит скрипт.
     const avif = await getImage({ src: poster, widths: [400, 800], format: "avif", quality: 55 });
     const webp = await getImage({ src: poster, widths: [400, 800], format: "webp", quality: 72 });
-    return { work, poster, avif: avif.srcSet.attribute, webp, n: String(i + 1).padStart(2, "0") };
+    return { work, poster, avif: avif.srcSet.attribute, webp };
   }),
 );
 ---
 
-<section aria-labelledby="index-title" class="works-index border-y border-line bg-surface" data-works-index>
-  <h2 id="index-title" class="sr-only">Работы коротко</h2>
-  {/* Подписи колонок — только глазу: в каждой строке и так всё сказано. */}
-  <div class="container-page" aria-hidden="true">
-    <div class="index-head">
-      <span>Проект</span>
-      <span>Отрасль</span>
-      <span>Главное</span>
-    </div>
-  </div>
+<div class="works-index border-y border-line bg-surface" data-works-index>
+  <h3 class="sr-only">Другие работы</h3>
   <ol class="container-page" data-stagger>
     {
-      rows.map(({ work, poster, n }, i) => (
+      rows.map(({ work, poster }, i) => (
         <li class="index-row">
           <a href={caseUrl(work.id)} class="index-link" data-index-row={i}>
             <span class="index-fill" aria-hidden="true" />
-            <span class="index-num" aria-hidden="true">
-              {n}
-            </span>
             <Picture
               src={poster}
               alt=""
@@ -75,7 +70,7 @@ const rows = await Promise.all(
     </div>
     <span class="index-preview-label">Смотреть кейс</span>
   </div>
-</section>
+</div>
 
 <style>
   .works-index {
@@ -85,14 +80,14 @@ const rows = await Promise.all(
   .index-row + .index-row {
     border-top: 1px solid var(--color-line);
   }
-  /* Телефон: миниатюра слева, справа — номер с отраслью, название и итог. */
+  /* Телефон: миниатюра слева, справа — отрасль, название и итог. */
   .index-link {
     position: relative;
     isolation: isolate;
     display: grid;
     grid-template-columns: 5.5rem minmax(0, 1fr);
     grid-template-areas:
-      "thumb meta"
+      "thumb industry"
       "thumb name"
       "thumb result";
     column-gap: 1rem;
@@ -107,11 +102,6 @@ const rows = await Promise.all(
     transform: scaleY(0);
     transform-origin: bottom;
     transition: transform 0.55s var(--ease-out-expo);
-  }
-  .index-num {
-    grid-area: meta;
-    font-size: 0.8125rem;
-    color: var(--color-muted);
   }
   .index-thumb {
     grid-area: thumb;
@@ -130,8 +120,7 @@ const rows = await Promise.all(
     line-height: 1.05;
   }
   .index-industry {
-    grid-area: meta;
-    margin-left: 2.25rem;
+    grid-area: industry;
     font-size: 0.8125rem;
     color: var(--color-muted);
   }
@@ -145,33 +134,14 @@ const rows = await Promise.all(
   .index-link :global(.index-arrow) {
     display: none;
   }
-  .index-head {
-    display: none;
-  }
 
   /* Широкий экран: строка-таблица, миниатюры нет — её место занимает превью. */
   @media (min-width: 1024px) {
-    .index-link,
-    .index-head {
-      grid-template-columns: 2.75rem minmax(0, 1.25fr) minmax(0, 0.6fr) minmax(0, 1.45fr) 1.5rem;
-      column-gap: 1.5rem;
-    }
     .index-link {
-      grid-template-areas: "num name industry result arrow";
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.6fr) minmax(0, 1.45fr) 1.5rem;
+      grid-template-areas: "name industry result arrow";
+      column-gap: 1.5rem;
       padding-block: 1.5rem;
-    }
-    .index-head {
-      display: grid;
-      padding-block: 1.25rem 0.75rem;
-      border-bottom: 1px solid var(--color-line);
-      font: 500 0.8125rem/1.2 var(--font-sans);
-      color: var(--color-muted);
-    }
-    .index-head span:first-child {
-      grid-column: 2;
-    }
-    .index-num {
-      grid-area: num;
     }
     .index-thumb {
       display: none;
@@ -181,8 +151,6 @@ const rows = await Promise.all(
       transition: translate 0.5s var(--ease-out-expo);
     }
     .index-industry {
-      grid-area: industry;
-      margin-left: 0;
       font-size: 0.9375rem;
     }
     .index-result {
@@ -206,7 +174,6 @@ const rows = await Promise.all(
     .index-link:hover :global(.index-arrow) {
       translate: 0.25rem 0;
     }
-    .index-link:hover .index-num,
     .index-link:hover .index-industry {
       color: var(--color-ink-2);
     }
