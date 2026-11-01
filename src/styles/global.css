@@ -546,9 +546,9 @@
   .step.is-done .step-line::after {
     transform: scaleY(1);
   }
-  /* Последнему шагу вести линию некуда: она кончается вместе с текстом. */
+  /* Последнему шагу вести линию некуда: она кончается у края подложки. */
   .step:last-child .step-line {
-    bottom: 1.25rem;
+    bottom: 0.5rem;
   }
   .step-heading {
     padding-right: 2.75rem;
@@ -645,7 +645,12 @@
         opacity 0.25s var(--ease-out),
         scale 0.45s var(--ease-out-expo);
     }
-    .step:not(.is-current):hover::before {
+    /* Строка под курсором выше соседних: иначе конец линии от предыдущего шага
+       может лечь поверх подложки и кружка. */
+    .step:hover {
+      z-index: 1;
+    }
+    .step:hover::before {
       opacity: 1;
       scale: 1;
     }
@@ -669,18 +674,18 @@
       scale: 1.12;
     }
     /* Подложка закрывает конец линии от предыдущего шага: кусочек над кружком
-       её продолжает, в том же цвете. Он растёт вместе с кружком, поэтому
-       ширина поделена на его масштаб. */
-    .step:not(.is-current, :first-child):hover .step-dot::after {
+       её продолжает, в том же цвете. Низ кусочка лежит под кружком. */
+    .step:not(:first-child):hover .step-line::before {
       content: "";
       position: absolute;
-      bottom: calc(100% + 1px);
-      left: calc(50% - 1px / 1.12);
-      width: calc(2px / 1.12);
-      height: 0.75rem;
+      top: calc(-2.75rem - 1px);
+      left: 0;
+      width: 100%;
+      height: calc(0.75rem + 1px);
       background: var(--color-line);
     }
-    .step.is-done:hover .step-dot::after {
+    .step.is-current:hover .step-line::before,
+    .step.is-done:hover .step-line::before {
       background: var(--color-ink);
     }
     .step:not(.is-current):hover .step-title {
