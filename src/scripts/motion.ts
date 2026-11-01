@@ -12,10 +12,10 @@
 //   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
 //   data-progress — полоса прочитанного в шапке;
 //   data-services — услуги и их сцены (scripts/services.ts);
-//   data-contact-glow — пятно света за курсором в контактах;
-//   data-footer-name — имя в подвале, буквы набирают вес у курсора.
-// Визитка первого экрана, наклейки, подсказка у курсора, индекс работ и ролики
-// шагов — в своих модулях (badge, stickers, cursor, works-index, clips). Запускает всё
+//   data-footer-name — имя в подвале, буквы поднимаются при появлении.
+// Визитка первого экрана, наклейки, подсказка у курсора, индекс работ, ролики
+// шагов и свет в контактах и подвале — в своих модулях (badge, stickers, cursor,
+// works-index, clips, light). Запускает всё
 // boot.ts — после загрузки страницы.
 // «Уменьшить движение» — ничего из этого: страница видна как есть.
 import { gsap } from "gsap";
@@ -27,6 +27,7 @@ import { initBadge } from "./badge";
 import { initStickers } from "./stickers";
 import { initCursor } from "./cursor";
 import { initWorksIndex } from "./works-index";
+import { initLight } from "./light";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -312,8 +313,8 @@ function contactReveal() {
   );
 }
 
-/** Имя в подвале: буквы поднимаются при появлении, у курсора — толстеют. */
-function footerName(fine: boolean): () => void {
+/** Имя в подвале: буквы поднимаются при появлении, вес им задаёт свет (light.ts). */
+function footerName(): () => void {
   const root = document.querySelector<HTMLElement>("[data-footer-name]");
   if (!root) return () => {};
   const letters = all(".footer-letter", root);
@@ -342,25 +343,7 @@ function footerName(fine: boolean): () => void {
   });
   const onResize = () => fix();
   window.addEventListener("resize", onResize);
-  if (!fine) return () => window.removeEventListener("resize", onResize);
-
-  const setters = letters.map((l) => gsap.quickTo(l, "--w", { duration: 0.6, ease: "power3.out" }));
-  const footer = root.closest("footer") ?? root;
-  const move = (event: PointerEvent) => {
-    letters.forEach((l, i) => {
-      const r = l.getBoundingClientRect();
-      const d = Math.hypot(event.clientX - (r.left + r.width / 2), event.clientY - (r.top + r.height / 2));
-      setters[i]!(Math.round(900 - gsap.utils.clamp(0, 1, d / 520) * 600));
-    });
-  };
-  const leave = () => setters.forEach((set) => set(300));
-  footer.addEventListener("pointermove", move);
-  footer.addEventListener("pointerleave", leave);
-  return () => {
-    window.removeEventListener("resize", onResize);
-    footer.removeEventListener("pointermove", move);
-    footer.removeEventListener("pointerleave", leave);
-  };
+  return () => window.removeEventListener("resize", onResize);
 }
 
 function header() {
@@ -480,40 +463,6 @@ function hover(): () => void {
     });
   });
 
-  // Контакты: за курсором по тёмному блоку плывёт мягкое жёлтое пятно.
-  // Прокрутка уносит блок из-под неподвижной мыши — пятно догоняет.
-  const contact = document.querySelector<HTMLElement>("#contact");
-  const glow = contact?.querySelector<HTMLElement>("[data-contact-glow]");
-  if (contact && glow) {
-    const gx = gsap.quickTo(glow, "x", { duration: 0.9, ease: "power3.out" });
-    const gy = gsap.quickTo(glow, "y", { duration: 0.9, ease: "power3.out" });
-    let pointer: { x: number; y: number } | null = null;
-    const follow = () => {
-      if (!pointer) return;
-      const r = contact.getBoundingClientRect();
-      gx(pointer.x - r.left);
-      gy(pointer.y - r.top);
-    };
-    const move = (e: PointerEvent) => {
-      if (!pointer) glow.classList.add("is-on");
-      pointer = { x: e.clientX, y: e.clientY };
-      follow();
-    };
-    const leave = () => {
-      pointer = null;
-      glow.classList.remove("is-on");
-    };
-    contact.addEventListener("pointermove", move);
-    contact.addEventListener("pointerleave", leave);
-    addEventListener("scroll", follow, { passive: true });
-    cleanups.push(() => {
-      contact.removeEventListener("pointermove", move);
-      contact.removeEventListener("pointerleave", leave);
-      removeEventListener("scroll", follow);
-      glow.classList.remove("is-on");
-    });
-  }
-
   return () => cleanups.forEach((fn) => fn());
 }
 
@@ -582,7 +531,7 @@ export function init() {
             stops.push(initClips(true));
             if (fine) stops.push(hover());
           },
-          () => stops.push(footerName(fine)),
+          () => stops.push(footerName(), initLight()),
         ];
         for (const task of tasks) {
           if (cancelled) return;

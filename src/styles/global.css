@@ -856,28 +856,24 @@
     display: grid;
   }
 
-  /* Контакты: мягкое жёлтое пятно за курсором (motion.ts двигает его и
-     включает). Под текстом: блок изолирован, пятно в нём — на z-index -1. */
-  .contact-glow {
+  /* Свет в контактах и подвале (scripts/light.ts). Под текстом: блоки
+     изолированы, холст в них — на z-index -1. */
+  .end-light {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     z-index: -1;
-    width: 48rem;
-    height: 48rem;
-    margin: -24rem 0 0 -24rem;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgb(255 212 59 / 0.2), rgb(255 212 59 / 0.07) 50%, transparent);
+    width: 100%;
+    height: 100%;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.6s var(--ease-out);
+    transition: opacity 0.8s var(--ease-out);
   }
-  .contact-glow.is-on {
+  .end-light.is-on {
     opacity: 1;
   }
 
-  /* Имя в подвале: во всю ширину, насыщенность каждой буквы — --w
-     (motion.ts меняет её у курсора). */
+  /* Имя в подвале: во всю ширину, насыщенность каждой буквы — --w, тепло
+     от света — --warm (light.ts меняет их, когда свет за буквой). */
   .footer-name {
     display: flex;
     justify-content: space-between;
@@ -895,6 +891,7 @@
     display: inline-block;
     text-align: center;
     font-weight: var(--w, 300);
+    color: color-mix(in srgb, var(--color-accent) var(--warm, 0%), currentColor);
   }
 
   /* Подсказка у курсора (scripts/cursor.ts): едет рядом с системным курсором. */
