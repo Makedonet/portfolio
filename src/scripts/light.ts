@@ -12,8 +12,8 @@
 // Считается, только пока блоки на экране. Нет WebGL — холстов нет, буквы работают.
 
 const LINKS = 6;
-const RIPPLES = 4;
-const RIPPLE_LIFE = 1.2; // с
+const RIPPLES = 6;
+const RIPPLE_LIFE = 2.2; // с
 /** Сколько сгусток стягивается перед выстрелом, с. */
 const CHARGE = 0.2;
 /** Участков с мелким текстом на контакты и подвал вместе. */
@@ -75,11 +75,11 @@ void main() {
 
   // Поле течёт: из-за сдвига по шуму пятно получается не кругом, а с языками.
   // Сдвиг сильнее этого складывает поле само на себя: появляются резкие грани.
-  vec2 q = p / 380.;
+  vec2 q = p / 200.;
   vec2 warp = vec2(noise(q + vec2(0., uTime * .1)), noise(q + vec2(5.2, -uTime * .09))) - .5;
   vec2 fine = q * 2.3 + warp * 2.;
   warp += .3 * (vec2(noise(fine + vec2(uTime * .13, 0.)), noise(fine + vec2(3.1, uTime * .11))) - .5);
-  warp *= 230. * uLoose;
+  warp *= 95. * uLoose;
 
   // Центр точки растра: у точки один тон на всю её площадь, как в печати.
   const float s = .70710678;
@@ -94,14 +94,14 @@ void main() {
   tone *= mix(.82, 1.08, noise(center / 150. + warp / 300. + uTime * .06));
   tone *= .92 + .16 * hash(id * .01);
 
-  // Кольцо: вылетает быстро и тормозит, спереди край резкий, сзади шлейф.
+  // Кольцо: расходится и плавно тормозит, спереди край резкий, сзади шлейф.
   float swell = 0.;
   for (int i = 0; i < ${RIPPLES}; i++) {
     float age = uRipple[i].z;
     if (age < 0.) continue;
     float life = age / ${RIPPLE_LIFE.toFixed(1)};
-    float d = distance(center, uRipple[i].xy) - 40. - uWave * (1. - pow(1. - life, 3.));
-    swell += exp(-d * d / (d > 0. ? 500. : 9000.)) * pow(1. - life, 1.3);
+    float d = distance(center, uRipple[i].xy) - 30. - uWave * (1. - pow(1. - life, 2.));
+    swell += exp(-d * d / (d > 0. ? 300. : 3000.)) * pow(1. - life, 1.3);
   }
   float quiet = calm(center);
   tone = clamp(tone + swell * .95, 0., 1.) * quiet;
@@ -279,8 +279,8 @@ export function initLight(): () => void {
         spent = 1;
       }
     } else {
-      gather *= Math.exp(-dt * 2.6);
-      spent *= Math.exp(-dt * 2.2);
+      gather *= Math.exp(-dt * 2);
+      spent *= Math.exp(-dt * 1.6);
     }
 
     // На скорости и под рукой свет горит ярче, сам по себе — вполсилы.
@@ -288,7 +288,7 @@ export function initLight(): () => void {
     const wantHeat = (inside ? 0.86 : 0.62) + Math.min(speed / 2600, 0.34);
     heat += (wantHeat - heat) * (1 - Math.exp(-dt * 3));
     const breath = 1 + 0.06 * Math.sin(time * 0.9);
-    const size = Math.min(105 + zone.width * 0.075, 200) * breath * (1 - 0.8 * gather);
+    const size = Math.min(42 + zone.width * 0.026, 78) * breath * (1 - 0.6 * gather);
     const punch = gather * (1 - spent);
 
     let reach = 0;
@@ -310,7 +310,7 @@ export function initLight(): () => void {
       if (rippleData[o]! >= RIPPLE_LIFE) rippleData[o] = -1;
       else rippling = true;
     }
-    const bound = rippling ? 1e5 : reach * 2.2 + 240;
+    const bound = rippling ? 1e5 : reach * 2.2 + 100;
 
     calmBlocks.forEach((block, i) => {
       const r = block.getBoundingClientRect();
@@ -337,7 +337,7 @@ export function initLight(): () => void {
       gl.uniform1f(u.uCell!, zone.width < 640 ? 6 : 8);
       gl.uniform1f(u.uTime!, time);
       gl.uniform1f(u.uHeat!, heat * ignition * (1 + 1.6 * punch) * (1 - 0.9 * spent));
-      gl.uniform1f(u.uWave!, Math.hypot(zone.width, innerHeight) * 0.75);
+      gl.uniform1f(u.uWave!, Math.hypot(zone.width, innerHeight) * 0.6);
       gl.uniform1f(u.uLoose!, 1 - 0.9 * gather);
       gl.uniform1f(u.uPunch!, punch);
       gl.uniform3f(u.uBound!, chain[0]!.x, chain[0]!.y, bound);
@@ -358,7 +358,7 @@ export function initLight(): () => void {
       if (name) {
         const hx = chain[0]!.x + zone.left;
         const hy = chain[0]!.y + zone.top;
-        const near = Math.max(size * 1.7, name.height);
+        const near = size * 3.4;
         letters.forEach((letter, i) => {
           const r = letter.getBoundingClientRect();
           const d = Math.hypot(hx - (r.left + r.width / 2), hy - (name.top + name.height / 2));
