@@ -112,8 +112,11 @@ export async function createPortrait(box: HTMLElement): Promise<Portrait | null>
   };
 
   const resize = () => {
-    const width = box.clientWidth;
-    const height = box.clientHeight;
+    // Точные размеры, а не округлённые clientWidth: иначе холст слегка растянут
+    // и при подмене сдвигается относительно SVG.
+    const style = getComputedStyle(box);
+    const width = parseFloat(style.width);
+    const height = parseFloat(style.height);
     // Плотность — как у экрана (до 3x): иначе точки мутнее, чем в SVG,
     // и подмена была бы заметна.
     const dpr = Math.min(window.devicePixelRatio || 1, 3);

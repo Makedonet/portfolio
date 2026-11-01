@@ -11,7 +11,8 @@
 //   волной, а визитка подсказывает, что контакты на обороте. Касание портрета
 //   пускает по точкам волну, касание стёртого — собирает точки обратно.
 //   По остальной визитке свайп хватает и бросает её, как мышь; касание —
-//   переворачивает. Пока никто не трогал, призрачный палец показывает, что делать.
+//   переворачивает. Сама по себе визитка на телефоне не двигается: всё только
+//   от пальца, что делать — подсказывает надпись на ней.
 // - Прокрутка страницы на компьютере слегка относит визитку в сторону, как
 //   ветер; на сенсорных экранах прокрутка её не трогает.
 // - Под курсором визитка наклоняется, по ней бежит блик, на портрете
@@ -28,8 +29,13 @@ type Sample = { x: number; y: number; t: number };
 
 const LINKS = 9;
 const GRAVITY = 2400; // px/с²
-const AIR = 0.994; // доля скорости, что остаётся за подшаг
-const SUBSTEPS = 3;
+const AIR = 0.9955; // доля скорости, что остаётся за шаг
+/** Шаг расчёта постоянный, не зависит от кадров: иначе равновесие ленты
+ *  плавает вместе с длиной кадра, и визитка мелко дрожит. 60 и 120 Гц — ровно
+ *  4 и 2 шага на кадр. */
+const STEP = 1 / 240;
+/** Сколько шагов лента успокаивается перед показом. */
+const SETTLE = 1200;
 const ITERATIONS = 8;
 // Пружина поворота вокруг вертикальной оси: жёсткость и затухание.
 const SPIN_K = 95;
@@ -60,7 +66,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   const portraitBox = root.querySelector<HTMLElement>("[data-portrait]")!;
   const band = root.querySelector<HTMLElement>("[data-badge-band]")!;
   const tip = root.querySelector<HTMLElement>("[data-badge-tip]")!;
-  const finger = root.querySelector<HTMLElement>("[data-badge-finger]")!;
   const colorImage = root.querySelector<HTMLImageElement>("[data-portrait-color]")!;
   const cleanups: Array<() => void> = [];
   const listen = (target: EventTarget, type: string, fn: (event: never) => void, options?: AddEventListenerOptions) => {
@@ -154,6 +159,14 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     });
     anchor = pts[0]!;
     bottom = { x, y: attach + cardLength, px: x, py: attach + cardLength, w: 0.2 };
+    // Прямая лента — ещё не покой: под весом визитки она чуть проседает. Сразу
+    // в равновесие, иначе при первом кадре визитка подпрыгнула бы сама.
+    wind = 0;
+    for (let k = 0; k < SETTLE; k++) step(STEP);
+    for (const p of [...pts, bottom]) {
+      p.px = p.x;
+      p.py = p.y;
+    }
   };
 
   /** Угол визитки: 0 — висит отвесно, плюс — по часовой. */
@@ -296,10 +309,12 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     if (Math.abs(wind) < 2) wind = 0;
   };
 
+  let lag = 0;
   const tick = (_time: number, deltaMs: number) => {
     const dt = Math.min(deltaMs, 50) / 1000;
     breeze(dt);
-    for (let s = 0; s < SUBSTEPS; s++) step(dt / SUBSTEPS);
+    lag += dt;
+    for (; lag >= STEP; lag -= STEP) step(STEP);
     spin(dt);
     const ease = 1 - Math.exp(-dt * 9);
     tiltX += (goalX - tiltX) * ease;
@@ -383,7 +398,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   let lastSound = 0;
   let lastBuzz = 0;
   const startScratch = (at: ReturnType<typeof locate>) => {
-    stopDemo();
     scratching = true;
     hover = true;
     lean(at);
@@ -421,7 +435,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   };
   /** Касание портрета: целый — волна по точкам, стёртый — точки слетаются назад. */
   const tapPortrait = (at: ReturnType<typeof locate>) => {
-    stopDemo();
     if (revealed) {
       revealed = false;
       portrait?.restore();
@@ -475,7 +488,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
         if (press.zone && !revealed) {
           startScratch(at);
         } else {
-          stopDemo();
           held = { lx: at.lx, ly: at.ly, tx: at.x, ty: at.y };
           card.classList.add("is-held");
           hover = false;
@@ -570,69 +582,15 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   // от каждого пикселя: ровная прокрутка её не трогает, толчок при старте и
   // остановке — качает. Иначе плавная прокрутка к разделу по пункту меню
   // раскачивала визитку почти до горизонтали. Слушатель только будит расчёт,
-  // скорость считается в кадре (inertia ниже).
+  // скорость считается в кадре (inertia ниже). Без мыши прокрутка визитку не
+  // трогает: будить незачем.
   listen(
     window,
     "scroll",
     () => {
-      if (visible && !held) wake();
+      if (fine && visible && !held) wake();
     },
     { passive: true },
-  );
-
-  // Призрачный палец: проводит по портрету, пока никто его не трогал, — один
-  // раз, когда портрет на экране, и ещё раз, если посетитель так и не решился.
-  let demoTween: gsap.core.Tween | null = null;
-  let demoTimer = 0;
-  let demoPlays = 0;
-  let demoOver = fine;
-  const finishDemoStroke = () => {
-    demoTween = null;
-    finger.classList.remove("is-on");
-    portrait?.leave();
-    wake();
-  };
-  const playDemo = () => {
-    if (demoOver || !portrait || face !== 0) return;
-    demoPlays++;
-    finger.classList.add("is-on");
-    const width = portraitBox.clientWidth;
-    const height = portraitBox.clientHeight;
-    demoTween = gsap.to(
-      { t: 0 },
-      {
-        t: 1,
-        duration: 1.9,
-        ease: "sine.inOut",
-        onUpdate(this: gsap.core.Tween) {
-          const t = this.targets<{ t: number }>()[0]!.t;
-          const x = width * (0.18 + 0.64 * t);
-          const y = height * (0.42 + 0.14 * Math.sin(t * Math.PI * 3));
-          finger.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-          portrait?.pointer(x, y);
-          wake();
-        },
-        onComplete() {
-          finishDemoStroke();
-          if (demoPlays < 2) demoTimer = window.setTimeout(playDemo, 7000);
-        },
-      },
-    );
-  };
-  const stopDemo = () => {
-    demoOver = true;
-    clearTimeout(demoTimer);
-    if (demoTween) {
-      demoTween.kill();
-      finishDemoStroke();
-    }
-  };
-  const demoWatch = new IntersectionObserver(
-    ([entry]) => {
-      clearTimeout(demoTimer);
-      if (entry?.isIntersecting && !demoTween && demoPlays < 2) demoTimer = window.setTimeout(playDemo, 500);
-    },
-    { threshold: 0.65 },
   );
 
   // Без мыши всё для портрета качается, только когда визитка показалась: на
@@ -645,7 +603,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
       portrait = p;
       if (!p) return;
       setTip(TIP_START);
-      demoWatch.observe(portraitBox);
     });
   };
 
@@ -689,8 +646,6 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   return () => {
     cleanups.forEach((fn) => fn());
     seen.disconnect();
-    demoWatch.disconnect();
-    stopDemo();
     portrait?.clearDust();
     sleep();
     clearTimeout(resizeTimer);

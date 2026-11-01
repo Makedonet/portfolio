@@ -135,7 +135,6 @@ const photoImage = await variants(mountains, [320, 480, 640]);
             </picture>
             {/* Что стёрто пальцем, поверх всего: фото, вырезанное по следу. */}
             <canvas class="portrait-reveal" aria-hidden="true" data-portrait-reveal></canvas>
-            <span class="badge-finger" aria-hidden="true" data-badge-finger></span>
           </div>
           <span class="badge-tip" aria-hidden="true" data-badge-tip></span>
           <div class="badge-band" data-badge-band>
@@ -402,7 +401,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     left: 0;
     right: 0;
     bottom: 5.2em;
-    aspect-ratio: 360 / 371;
+    aspect-ratio: 360 / 370.5;
   }
   .portrait-dots,
   .portrait-canvas,
@@ -431,8 +430,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     display: block;
   }
 
-  /* Подсказка на телефоне и палец-призрак, который показывает жест. Их
-     включает скрипт (badge.ts): без него стирать нечем. */
+  /* Подсказка на телефоне. Её включает скрипт (badge.ts): без него стирать нечем. */
   .badge-tip {
     position: absolute;
     left: 50%;
@@ -456,24 +454,6 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     opacity: 1;
     translate: -50% 0;
   }
-  .badge-finger {
-    position: absolute;
-    top: -1.5em;
-    left: -1.5em;
-    width: 3em;
-    height: 3em;
-    border-radius: 50%;
-    border: 0.14em solid rgb(255 255 255 / 0.9);
-    background: rgb(255 255 255 / 0.28);
-    box-shadow: 0 0.2em 0.7em rgb(17 17 16 / 0.35);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .badge-finger:global(.is-on) {
-    opacity: 1;
-  }
-
   .badge-band {
     position: absolute;
     left: 0;
@@ -820,8 +800,10 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     }
   }
 
-  /* Появление: визитка влетает сбоку и раскачивается вокруг крепления. */
-  @media (prefers-reduced-motion: no-preference) {
+  /* Появление: визитка влетает сбоку и раскачивается вокруг крепления. Только
+     с мышью: на телефоне визитка ниже первого экрана, качание шло бы за кадром,
+     а при быстрой прокрутке его хвост выглядел бы как рывок. */
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
     :global(.js) .badge-swing {
       animation: badge-swing 2.2s linear(0, 0.38 6%, 0.83 13%, 1.13 19%, 1.24 24%, 1.18 30%, 1.02 36%, 0.9 42%, 0.86 47%, 0.91 54%, 0.99 61%, 1.04 68%, 1.04 76%, 1.01 84%, 0.99 92%, 1) 0.2s both;
     }
