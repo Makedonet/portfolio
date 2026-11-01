@@ -1,6 +1,7 @@
 ---
 // Кейс целиком — на своей странице (pages/works/[id].astro): слева окно сайта
-// с телефоном, справа история. Название и отрасль — в шапке страницы.
+// с телефоном, под ним цифры и стек, справа история. На телефоне всё в один
+// столбец: окно, история, цифры. Название и отрасль — в шапке страницы.
 import LiveWindow from "./LiveWindow.astro";
 import Icon from "./Icon.astro";
 import TechIcon from "./TechIcon.astro";
@@ -23,13 +24,15 @@ const plain = work.metrics.filter((metric) => metric.visual?.type !== "bars");
 const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
 ---
 
-<article aria-labelledby={labelledby} class="container-page grid gap-10 pt-8 pb-20 sm:pb-28 lg:grid-cols-12 lg:items-start lg:gap-14 lg:pt-12" data-case>
-  {/* Текст кейса выше окна, поэтому на широком экране окно едет рядом с ним
-      при прокрутке, а не висит посередине с пустотой сверху. Окно и телефон —
-      одна группа: пауза в строке адреса останавливает обоих. Окно помечено
-      data-vt: в него перетекает окно из превью на главной. Окно поднято
-      на нижнюю полосу обложки (CaseCover.astro) и стоит на её краю. */}
-  <div class="relative -mt-20 sm:-mt-24 lg:sticky lg:top-28 lg:col-span-7 lg:-mt-44" data-live-group data-tilt="5">
+{/* Второй ряд сетки растягивается сам: если история выше левого столбца,
+    запас уходит под цифры, а не в щель между окном и цифрами. Столбцы разной
+    высоты, поэтому на широком экране короткий едет рядом с длинным: цифры —
+    вдоль длинной истории, короткая история — вдоль окна с цифрами. */}
+<article aria-labelledby={labelledby} class="container-page grid gap-10 pt-8 pb-20 sm:pb-28 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start lg:gap-14 lg:pt-12" data-case>
+  {/* Окно и телефон — одна группа: пауза в строке адреса останавливает обоих.
+      Окно помечено data-vt: в него перетекает окно из превью на главной. Окно
+      поднято на нижнюю полосу обложки (CaseCover.astro) и стоит на её краю. */}
+  <div class="relative -mt-20 sm:-mt-24 lg:col-span-7 lg:col-start-1 lg:row-start-1 lg:-mt-44" data-live-group data-tilt="5">
     <div class:list={["relative", phone && "pr-[9%] pb-8 sm:pb-10"]} data-tilt-target>
       <div id="case-window" data-case-visual data-vt={work.id}>
         <LiveWindow
@@ -63,16 +66,15 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
     </div>
   </div>
 
-  <div class="lg:col-span-5">
+  <div class="lg:sticky lg:top-28 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
     {
       work.now && (
         <p class="inline-flex rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-ink" data-fade set:html={typo(work.now)} />
       )
     }
 
-    {/* Кейс читается как история: задача — результат — что сделано — цифры.
-        Результат для бизнеса — сразу под задачей, крупно: ради него сайт и
-        делали. */}
+    {/* Кейс читается как история: задача — результат — что сделано. Результат
+        для бизнеса — сразу под задачей, крупно: ради него сайт и делали. */}
     <h2 class:list={["case-label", !work.now && "case-label-first"]} data-fade>Задача</h2>
     <p class="mt-2 leading-relaxed text-ink-2" data-fade set:html={typo(work.task)} />
 
@@ -108,8 +110,10 @@ const lone = plain.length % 2 === 1 ? plain.at(-1) : undefined;
         ))
       }
     </ul>
+  </div>
 
-    <h2 class="case-label" data-fade>В цифрах</h2>
+  <div class="lg:sticky lg:top-28 lg:col-span-7 lg:col-start-1 lg:row-start-2">
+    <h2 class="case-label case-label-first" data-fade>В цифрах</h2>
     <dl class="case-metrics mt-3" data-stagger>
       {work.metrics.map((metric) => <MetricCard metric={metric} wide={metric === lone} />)}
     </dl>
