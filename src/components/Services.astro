@@ -6,33 +6,25 @@ import "../styles/services.css";
 ---
 
 <section aria-labelledby="services-title" id="services" class="overflow-x-clip bg-surface">
-  {/* На широком экране секция закрепляется: слева список услуг, по нему идёт
-      маркер, справа снизу наезжают цветные листы со сценами (scripts/services.ts).
-      На телефоне, без скрипта и при «уменьшить движение» — та же разметка лентой
-      карточек, которую листают вбок. */}
-  <div class="services-pin" data-services>
-    <div class="services-head">
-      <h1 id="services-title" class="services-title font-display font-bold text-balance" data-split set:html={typo("«Под ключ» - это всё, что нужно сайту")} />
-      <p
-        class="services-intro leading-relaxed text-ink-2"
-        data-fade
-        set:html={typo("Не нужно искать отдельно дизайнера, верстальщика и специалиста, который «подключит формы». Один человек ведёт ваш сайт от первого звонка до запуска и после него.")}
-      />
-    </div>
+  {/* Один столбец сверху вниз: название услуги, что это значит, иллюстрация к этим
+      словам. Сцена играет, когда её лист на экране (scripts/services.ts). */}
+  <div class="services-page" data-services>
+    <h1 id="services-title" class="services-title font-display font-bold text-balance" data-split set:html={typo("«Под ключ» - это всё, что нужно сайту")} />
+    <p
+      class="services-intro leading-relaxed text-ink-2"
+      set:html={typo("Не нужно искать отдельно дизайнера, верстальщика и специалиста, который «подключит формы». Один человек ведёт ваш сайт от первого звонка до запуска и после него.")}
+    />
 
-    {/* Лента листается и с клавиатуры, поэтому в порядке Tab. */}
-    <ol class="services-track" tabindex="0" aria-label="Что входит в работу под ключ">
+    <ol class="services-list" aria-label="Что входит в работу под ключ">
       {
-        services.map((service, i) => (
-          <li class={`service tone-${service.tone}`} data-service>
-            <h2 class="service-name font-display font-bold" style={`--row:${i + 3}`}>
-              <span data-service-name>{service.title}</span>
-            </h2>
+        services.map((service) => (
+          <li class={`tone-${service.tone}`} data-service>
+            <h2 class="service-name font-display font-bold">{service.title}</h2>
+            <p class="service-text leading-relaxed" set:html={typo(service.text)} />
             <div class="service-sheet" data-service-sheet>
               <div class="service-stage">
                 <ServiceScene scene={service.scene} />
               </div>
-              <p class="service-text leading-relaxed" set:html={typo(service.text)} />
             </div>
           </li>
         ))

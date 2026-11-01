@@ -1,11 +1,8 @@
 // Блок «Что входит» (components/Services.astro, сцены — ServiceScene.astro).
-// На широком экране секция закреплена: прокрутка ведёт общую ленту времени —
-// маркер идёт по названиям услуг, снизу наезжают листы, в листе идёт его сцена.
-// Движение следует за прокруткой, само по себе ничего не играет.
-// На телефоне лента карточек листается вбок, а сцена проигрывается один раз,
-// когда её карточка на экране.
+// Услуги идут столбцом. Сцена проигрывается, когда её лист на экране, и остаётся
+// на последнем кадре; ушла с экрана — при возвращении сыграет заново.
 // Разметка сцен — последний кадр. Здесь ставится начало и движение к разметке;
-// откат matchMedia возвращает последний кадр.
+// откат контекста motion.ts возвращает последний кадр.
 // Вызывается только без «уменьшить движение»: иначе остаются последние кадры.
 import { gsap } from "gsap";
 
@@ -182,95 +179,6 @@ const sceneOf = (item: HTMLElement) => {
   return scenes[name]!(root);
 };
 
-/** Широкий экран: закреплённая секция, одна лента времени на все девять услуг. */
-function pinned(root: HTMLElement, items: HTMLElement[]) {
-  const names = items.map((item) => item.querySelector<HTMLElement>("[data-service-name]")!);
-  const headings = items.map((item) => item.querySelector<HTMLElement>(".service-name")!);
-  const n = items.length;
-
-  // Ленте карточек нечего переключать, а здесь название — кнопка к своей сцене.
-  // Создаётся только здесь: без скрипта такая кнопка ничего бы не делала.
-  const buttons = names.map((name, i) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "service-jump";
-    name.replaceWith(button);
-    button.append(name);
-    button.addEventListener("click", () => {
-      const st = tl.scrollTrigger!;
-      scrollTo({ top: st.start + ((st.end - st.start) * (i + 0.6)) / n });
-    });
-    return button;
-  });
-
-  gsap.set(names, { backgroundSize: "0% 0.42em" });
-
-  let active = -1;
-  const mark = () => {
-    const now = Math.min(n - 1, Math.floor(tl.time()));
-    if (now === active) return;
-    active = now;
-    headings.forEach((heading, i) => {
-      heading.classList.toggle("is-active", i === now);
-      heading.classList.toggle("is-done", i < now);
-    });
-    buttons.forEach((button, i) => (i === now ? button.setAttribute("aria-current", "step") : button.removeAttribute("aria-current")));
-  };
-
-  const tl = gsap.timeline({
-    onUpdate: mark,
-    scrollTrigger: {
-      trigger: root,
-      start: "top top",
-      end: () => `+=${Math.round(innerHeight * 0.5 * n)}`,
-      pin: true,
-      scrub: 0.8,
-      invalidateOnRefresh: true,
-      anticipatePin: 1,
-    },
-  });
-
-  items.forEach((item, i) => {
-    const sheet = item.querySelector<HTMLElement>("[data-service-sheet]")!;
-    if (i > 0) {
-      gsap.set(sheet, { yPercent: 100 });
-      tl.to(sheet, { yPercent: 0, duration: 0.24, ease: "power2.inOut" }, i - 0.12);
-    }
-    tl.to(names[i]!, { backgroundSize: "100% 0.42em", duration: 0.8, ease: "none" }, i + 0.1);
-    tl.add(sceneOf(item).duration(0.72), i + 0.14);
-  });
-  // Лента ровно на n единиц: последняя сцена успевает постоять законченной.
-  tl.to({}, { duration: 0.01 }, n - 0.01);
-  mark();
-
-  return () => {
-    active = -1;
-    headings.forEach((heading) => heading.classList.remove("is-active", "is-done"));
-    buttons.forEach((button, i) => button.replaceWith(names[i]!));
-    resetDesign(root);
-  };
-}
-
-/** Телефон: сцена проигрывается, когда её карточка в кадре, и остаётся на последнем кадре. */
-function swiped(root: HTMLElement, items: HTMLElement[]) {
-  const timelines = new Map(items.map((item) => [item as Element, sceneOf(item).duration(2.6).pause()]));
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        observer.unobserve(entry.target);
-        timelines.get(entry.target)?.play();
-      });
-    },
-    { threshold: 0.6 },
-  );
-  items.forEach((item) => observer.observe(item));
-  return () => {
-    observer.disconnect();
-    resetDesign(root);
-  };
-}
-
 /** Сцена «Дизайн» пишет ширину и размер окна напрямую: откат их не знает. */
 function resetDesign(root: HTMLElement) {
   all(root, ".sc-device").forEach((device) => {
@@ -281,11 +189,30 @@ function resetDesign(root: HTMLElement) {
   all(root, ".sc-gauge-number").forEach((number) => (number.textContent = "100"));
 }
 
-export function initServices() {
+export function initServices(): () => void {
   const root = document.querySelector<HTMLElement>("[data-services]");
-  if (!root) return;
-  const items = all(root, "[data-service]");
-  const mm = gsap.matchMedia();
-  mm.add("(min-width: 1024px)", () => pinned(root, items));
-  mm.add("(max-width: 1023.98px)", () => swiped(root, items));
+  if (!root) return () => {};
+  const timelines = new Map(
+    all(root, "[data-service]").map((item) => [item.querySelector("[data-service-sheet]")!, sceneOf(item).duration(3).pause()]),
+  );
+  // Порог такой, чтобы первая сцена заиграла при открытии страницы и на низком
+  // ноутбуке: при окне 640 px над краем видно меньше половины листа.
+  const start = 0.4;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const tl = timelines.get(entry.target);
+        if (!tl) return;
+        // false: перемотка должна вызвать onUpdate, им сцены рисуют ширину и число.
+        if (!entry.isIntersecting) tl.pause(0, false);
+        else if (entry.intersectionRatio >= start) tl.play();
+      });
+    },
+    { threshold: [0, start] },
+  );
+  timelines.forEach((_tl, sheet) => observer.observe(sheet));
+  return () => {
+    observer.disconnect();
+    resetDesign(root);
+  };
 }

@@ -474,9 +474,9 @@ export function init() {
             if (badge) stops.push(initBadge(badge, true, fine), initStickers(badge.closest("section") ?? badge));
             if (fine) stops.push(initCursor());
           },
-          // Закреплённый блок услуг добавляет странице высоты — он раньше
-          // всех триггеров ниже него, тогда они сразу считаются с его учётом.
-          () => services?.initServices(),
+          () => {
+            if (services) stops.push(services.initServices());
+          },
           () => {
             header();
             progress();
