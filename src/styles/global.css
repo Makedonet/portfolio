@@ -937,8 +937,9 @@
   }
 
   /* Первый экран оживает на CSS — сразу при первой отрисовке, не дожидаясь
-     скрипта: слова поднимаются из-под маски, абзацы всплывают, визитка
-     влетает на ленте (Badge.astro). Только при .js (его ставит скрипт в
+     скрипта: слова поднимаются из-под маски, визитка влетает на ленте
+     (Badge.astro). Абзац и кнопки не двигаются: они видны с первой отрисовки,
+     и движение с задержкой выглядело бы рывком под готовым заголовком. Только при .js (его ставит скрипт в
      <head>) и без «уменьшить движение»; иначе всё стоит на месте. */
   .hero-mask {
     display: inline-block;
@@ -956,14 +957,6 @@
       animation: hero-rise 0.95s var(--ease-out-expo) forwards;
       animation-delay: calc(0.05s + var(--i, 0) * 0.07s);
     }
-    /* Абзац и кнопки въезжают только движением, без прозрачности: так текст
-       первого экрана виден с первой отрисовки, и именно он, а не портрет на
-       визитке, засчитывается браузером как главный контент (LCP). */
-    .js .hero-fade {
-      transform: translateY(18px);
-      animation: hero-fade 0.9s var(--ease-out-expo) forwards;
-      animation-delay: var(--d, 0.4s);
-    }
     .js .marker {
       background-size: 0% 0.42em;
       animation: marker-draw 0.8s var(--ease-out-expo) 0.55s forwards;
@@ -972,11 +965,6 @@
   @keyframes hero-rise {
     to {
       transform: translateY(0);
-    }
-  }
-  @keyframes hero-fade {
-    to {
-      transform: none;
     }
   }
   @keyframes marker-draw {

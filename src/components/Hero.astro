@@ -58,20 +58,19 @@ const subtitle = ["от идеи", "до первых", "заявок"];
         </span>
       </h1>
       <p
-        class="hero-fade mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-2 sm:text-xl sm:leading-relaxed"
-        style="--d: 0.55s"
+        class="mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-2 sm:text-xl sm:leading-relaxed"
         set:html={typo(
           "Меня зовут Максим. Я беру на себя весь проект: структуру и тексты, дизайн, разработку, приём заявок, аналитику, хостинг и поддержку. Вы получаете быстрый сайт, с которого заявки доходят до вас без потерь.",
         )}
       />
-      <div class="hero-fade mt-9 flex flex-wrap items-center gap-3" style="--d: 0.7s">
+      <div class="mt-9 flex flex-wrap items-center gap-3">
         <a href="#contact" class="btn btn-primary">Обсудить проект</a>
         <a href="#works" class="btn btn-secondary">
           Посмотреть работы
           <Icon name="arrow-down" class="size-4" />
         </a>
       </div>
-      <p class="hero-fade mt-6 text-[0.9375rem] text-muted" style="--d: 0.85s">
+      <p class="mt-6 text-[0.9375rem] text-muted">
         Или сразу позвоните:{" "}
         <a href={phone.href} class="link-line phone-number inline-block pt-1 font-medium text-ink">{phone.display}</a>
       </p>
