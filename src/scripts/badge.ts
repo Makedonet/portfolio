@@ -366,11 +366,11 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     const ry = y - c.y;
     const lx = rx * Math.cos(a) + ry * Math.sin(a);
     const ly = -rx * Math.sin(a) + ry * Math.cos(a);
-    return { x, y, lx, ly, u: (lx + W / 2) / W, v: (ly + A) / H };
+    return { x, y, lx, ly, u: (lx + W / 2) / W, v: (ly - A) / H };
   };
 
   /** Координаты визитки → координаты портрета. */
-  const onPortrait = (at: { lx: number; ly: number }) => ({ x: at.lx + W / 2 - portraitBox.offsetLeft, y: at.ly + A - portraitBox.offsetTop });
+  const onPortrait = (at: { lx: number; ly: number }) => ({ x: at.lx + W / 2 - portraitBox.offsetLeft, y: at.ly - A - portraitBox.offsetTop });
 
   const lean = (at: { u: number; v: number }) => {
     goalY = gsap.utils.clamp(-1, 1, at.u * 2 - 1) * 9;
@@ -467,7 +467,7 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
     const mouse = event.pointerType === "mouse";
     // Палец на портрете: ниже портрета — чёрная полоса с именем, за неё хватают.
     const at = locate(event.clientX, event.clientY);
-    const zone = !mouse && face === 0 && Boolean(portrait) && at.ly + A < band.offsetTop;
+    const zone = !mouse && face === 0 && Boolean(portrait) && at.ly - A < band.offsetTop;
     press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, mouse, zone };
     samples = [{ x: event.clientX, y: event.clientY, t: event.timeStamp }];
     if (press.mouse) event.preventDefault();
