@@ -14,7 +14,7 @@ const subtitle = ["от идеи", "до первых", "заявок"];
   {/* Текст прижат к верху, а не центрирован по высоте: иначе, когда шрифт
       приезжает после первой отрисовки и высота строк чуть меняется, вся
       колонка съезжала бы на половину разницы — это сдвиг макета (CLS). */}
-  <div class="container-page relative grid gap-6 pt-10 pb-10 sm:pt-14 lg:min-h-[44rem] lg:grid-cols-12 lg:gap-8 lg:pt-[8.5rem] lg:pb-16 xl:min-h-[46rem]">
+  <div class="hero-fit container-page relative grid gap-6 pt-10 pb-10 sm:pt-14 lg:min-h-[calc(var(--hero-base)+var(--hero-spare))] lg:grid-cols-12 lg:gap-8 lg:pt-[calc(8.5rem+var(--hero-shift))] lg:pb-16">
     <div class="relative z-[3] lg:col-span-7">
       <h1 id="hero-title" class="font-display font-extrabold">
         <span class="block text-[clamp(4.5rem,25vw,6.25rem)] leading-[0.95] sm:text-[7rem] lg:text-[6.25rem] xl:text-[7.5rem]">

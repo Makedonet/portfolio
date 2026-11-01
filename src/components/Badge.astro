@@ -54,7 +54,8 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     <svg x="50%" overflow="visible">
       {/* Лента до покоя — прямая. Скрипт перерисовывает видимую из двух. */}
       <path id="badge-strap-m" class="strap lg:hidden" d="M0 0V84" data-strap></path>
-      <path id="badge-strap-d" class="strap hidden lg:inline" d="M0 -40V150" data-strap></path>
+      {/* 342 — крепление при самом большом сдвиге (--hero-shift): 150 + 12rem. При меньшем конец ленты прячется за визиткой. */}
+      <path id="badge-strap-d" class="strap hidden lg:inline" d="M0 -40V342" data-strap></path>
       <text class="strap-text lg:hidden" dy="0.35em"><textPath href="#badge-strap-m" data-strap-text>{strapText}</textPath></text>
       <text class="strap-text hidden lg:inline" dy="0.35em"><textPath href="#badge-strap-d" data-strap-text>{strapText}</textPath></text>
     </svg>
@@ -228,7 +229,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
   }
   @media (min-width: 1024px) {
     .badge-stage {
-      --rest: 150px;
+      --rest: calc(150px + var(--hero-shift));
       position: absolute;
       top: 0;
       right: 2rem;
@@ -784,19 +785,19 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     .sticker-seal {
       left: -2.5em;
       top: auto;
-      bottom: 9.5em;
+      bottom: calc(var(--hero-spare) - var(--hero-shift) + 9.5em);
     }
     .sticker-score {
       right: -0.5em;
-      top: 3.4em;
+      top: calc(var(--hero-shift) + 3.4em);
     }
     .sticker-tg {
       right: -2.75em;
-      bottom: 1.6em;
+      bottom: calc(var(--hero-spare) - var(--hero-shift) + 1.6em);
     }
     .sticker-code {
       left: 0.5em;
-      top: 4.6em;
+      top: calc(var(--hero-shift) + 4.6em);
     }
   }
 

@@ -618,13 +618,14 @@ export function initBadge(root: HTMLElement, motion: boolean, fine: boolean): ()
   });
   seen.observe(root);
 
-  // Пересобрать сцену — только когда сменилась ширина. На телефоне при
-  // прокрутке прячется и выезжает адресная строка: высота окна меняется, и
-  // сброс визитки в покой выглядел бы рывком.
+  // Пересобрать сцену — только когда сменилась ширина или визитка съехала вслед
+  // за высотой окна (--hero-shift, широкий экран). На телефоне при прокрутке
+  // прячется и выезжает адресная строка: высота окна меняется, и сброс визитки
+  // в покой выглядел бы рывком.
   let resizeTimer = 0;
   let lastWidth = window.innerWidth;
   listen(window, "resize", () => {
-    if (window.innerWidth === lastWidth) return;
+    if (window.innerWidth === lastWidth && card.offsetTop === top0) return;
     lastWidth = window.innerWidth;
     clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
