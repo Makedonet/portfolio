@@ -8,11 +8,6 @@ const year = new Date().getFullYear();
 
 <footer class="on-dark relative isolate overflow-clip bg-ink text-paper">
   <div class="container-page">
-    {/* Имя во всю ширину: буквы поднимаются при появлении и «набирают вес»
-        рядом со светом — у шрифта вариативная насыщенность (motion.ts, light.ts). */}
-    <p class="footer-name" aria-hidden="true" data-footer-name>
-      {[...site.name.toUpperCase()].map((letter) => <span class="footer-letter">{letter}</span>)}
-    </p>
     <div class="flex flex-col gap-6 border-t border-line-dark py-8 sm:flex-row sm:items-center">
       <div class="flex items-center gap-3">
         <Logo class="h-6 w-auto" />

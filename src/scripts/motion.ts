@@ -12,7 +12,6 @@
 //   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
 //   data-progress — полоса прочитанного в шапке;
 //   data-services — услуги и их сцены (scripts/services.ts);
-//   data-footer-name — имя в подвале, буквы поднимаются при появлении.
 // Визитка первого экрана, наклейки, подсказка у курсора, индекс работ, ролики
 // шагов и свет в контактах и подвале — в своих модулях (badge, stickers, cursor,
 // works-index, clips, light). Запускает всё
@@ -313,39 +312,6 @@ function contactReveal() {
   );
 }
 
-/** Имя в подвале: буквы поднимаются при появлении, вес им задаёт свет (light.ts). */
-function footerName(): () => void {
-  const root = document.querySelector<HTMLElement>("[data-footer-name]");
-  if (!root) return () => {};
-  const letters = all(".footer-letter", root);
-  // Ширина каждой буквы — по самому жирному начертанию: от веса буквы
-  // соседи не должны ездить.
-  const fix = () => {
-    letters.forEach((l) => {
-      l.style.width = "";
-      l.style.setProperty("--w", "900");
-    });
-    const widths = letters.map((l) => l.getBoundingClientRect().width);
-    letters.forEach((l, i) => {
-      l.style.width = `${widths[i]}px`;
-      l.style.removeProperty("--w");
-    });
-  };
-  fix();
-  // Ширины по запасному шрифту не годятся — перемерить, когда приедет шрифт.
-  void document.fonts.ready.then(fix);
-  gsap.from(letters, {
-    yPercent: 105,
-    duration: 1.2,
-    ease: "expo.out",
-    stagger: 0.06,
-    scrollTrigger: { trigger: root, start: "top 92%", once: true },
-  });
-  const onResize = () => fix();
-  window.addEventListener("resize", onResize);
-  return () => window.removeEventListener("resize", onResize);
-}
-
 function header() {
   const el = document.querySelector<HTMLElement>("[data-header]");
   if (!el) return;
@@ -531,7 +497,7 @@ export function init() {
             stops.push(initClips(true));
             if (fine) stops.push(hover());
           },
-          () => stops.push(footerName(), initLight()),
+          () => stops.push(initLight()),
         ];
         for (const task of tasks) {
           if (cancelled) return;

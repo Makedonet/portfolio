@@ -872,28 +872,6 @@
     opacity: 1;
   }
 
-  /* Имя в подвале: во всю ширину, насыщенность каждой буквы — --w, тепло
-     от света — --warm (light.ts меняет их, когда свет за буквой). */
-  .footer-name {
-    display: flex;
-    justify-content: space-between;
-    overflow: hidden;
-    padding-top: clamp(3.5rem, 9vw, 7rem);
-    padding-bottom: 0.04em;
-    font-family: var(--font-display);
-    font-size: min(31vw, 29rem);
-    font-weight: 300;
-    line-height: 0.82;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .footer-letter {
-    display: inline-block;
-    text-align: center;
-    font-weight: var(--w, 300);
-    color: color-mix(in srgb, var(--color-accent) var(--warm, 0%), currentColor);
-  }
-
   /* Подсказка у курсора (scripts/cursor.ts): едет рядом с системным курсором. */
   .cursor-label {
     position: fixed;

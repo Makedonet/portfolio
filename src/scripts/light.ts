@@ -5,11 +5,10 @@
 // Сгусток — цепочка точек: голова тянется к цели на пружине, остальные за ней,
 // на скорости получается хвост. Цель — курсор или палец, а без них он сам бродит
 // по видимой части блоков. Нажатие стягивает сгусток в плотный шар, и он разряжается
-// кольцом, а потом свет отрастает заново. Буквы имени в подвале набирают вес и
-// теплеют, когда свет проходит за ними. Вокруг мелкого текста (data-light-calm)
+// кольцом, а потом свет отрастает заново. Вокруг мелкого текста (data-light-calm)
 // точки сходят на нет: это подложка из самого растра, контраст как на чистом фоне.
 // Палец только смотрим (слушатели пассивные): вертикальный свайп листает страницу.
-// Считается, только пока блоки на экране. Нет WebGL — холстов нет, буквы работают.
+// Считается, только пока блоки на экране. Нет WebGL — холстов нет.
 
 const LINKS = 6;
 const RIPPLES = 6;
@@ -18,9 +17,6 @@ const RIPPLE_LIFE = 2.2; // с
 const CHARGE = 0.2;
 /** Участков с мелким текстом на контакты и подвал вместе. */
 const CALMS = 3;
-/** Вес буквы вдали от света и прямо перед ним. */
-const WEIGHT_MIN = 300;
-const WEIGHT_MAX = 900;
 
 const VERTEX = `
 attribute vec2 a;
@@ -171,9 +167,6 @@ export function initLight(): () => void {
   const footer = document.querySelector<HTMLElement>("footer");
   if (!contact || !footer) return () => {};
   const blocks = [contact, footer];
-  const letters = [...footer.querySelectorAll<HTMLElement>(".footer-letter")];
-  const shownWeight = letters.map(() => WEIGHT_MIN);
-  const shownWarm = letters.map(() => 0);
   const calmBlocks = blocks.flatMap((block) => [...block.querySelectorAll<HTMLElement>("[data-light-calm]")]).slice(0, CALMS);
 
   // Холсты — при первом приближении к блокам: до них многие не долистывают.
@@ -351,33 +344,6 @@ export function initLight(): () => void {
         canvas.classList.add("is-on");
       }
     });
-
-    // Имя: чем ближе свет к букве, тем она жирнее и теплее.
-    if (footerRect.top < innerHeight && footerRect.bottom > 0) {
-      const name = letters[0]?.parentElement?.getBoundingClientRect();
-      if (name) {
-        const hx = chain[0]!.x + zone.left;
-        const hy = chain[0]!.y + zone.top;
-        const near = size * 3.4;
-        letters.forEach((letter, i) => {
-          const r = letter.getBoundingClientRect();
-          const d = Math.hypot(hx - (r.left + r.width / 2), hy - (name.top + name.height / 2));
-          const closeness = Math.max(0, 1 - d / near) * ignition * (1 - spent);
-          const eased = closeness * closeness * (3 - 2 * closeness);
-          const weight = Math.round(WEIGHT_MIN + (WEIGHT_MAX - WEIGHT_MIN) * eased);
-          // Смена веса — это раскладка: мелкие изменения не стоят её.
-          if (Math.abs(weight - shownWeight[i]!) >= 6) {
-            shownWeight[i] = weight;
-            letter.style.setProperty("--w", String(weight));
-          }
-          const warm = Math.round(eased * 35);
-          if (warm !== shownWarm[i]) {
-            shownWarm[i] = warm;
-            letter.style.setProperty("--warm", `${warm}%`);
-          }
-        });
-      }
-    }
   };
 
   const start = () => {
@@ -445,9 +411,5 @@ export function initLight(): () => void {
       block.removeEventListener("click", onClick);
     });
     surfaces.forEach((surface) => surface.canvas.remove());
-    letters.forEach((letter) => {
-      letter.style.removeProperty("--w");
-      letter.style.removeProperty("--warm");
-    });
   };
 }
