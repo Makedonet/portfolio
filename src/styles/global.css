@@ -496,8 +496,12 @@
     column-gap: 1rem;
     padding-bottom: 1.25rem;
   }
+  /* Над линией: при наведении и «вздрагивании» кружок растёт и закрывает её.
+     Нажатие проходит сквозь него на кнопку, растянутую на строку. */
   .step-dot {
     position: relative;
+    z-index: 1;
+    pointer-events: none;
     display: grid;
     place-items: center;
     width: 2.25rem;
@@ -541,6 +545,10 @@
   }
   .step.is-done .step-line::after {
     transform: scaleY(1);
+  }
+  /* Последнему шагу вести линию некуда: она кончается вместе с текстом. */
+  .step:last-child .step-line {
+    bottom: 1.25rem;
   }
   .step-heading {
     padding-right: 2.75rem;
@@ -659,6 +667,21 @@
     .step:not(.is-current):hover .step-dot {
       border-color: var(--color-ink);
       scale: 1.12;
+    }
+    /* Подложка закрывает конец линии от предыдущего шага: кусочек над кружком
+       её продолжает, в том же цвете. Он растёт вместе с кружком, поэтому
+       ширина поделена на его масштаб. */
+    .step:not(.is-current, :first-child):hover .step-dot::after {
+      content: "";
+      position: absolute;
+      bottom: calc(100% + 1px);
+      left: calc(50% - 1px / 1.12);
+      width: calc(2px / 1.12);
+      height: 0.75rem;
+      background: var(--color-line);
+    }
+    .step.is-done:hover .step-dot::after {
+      background: var(--color-ink);
     }
     .step:not(.is-current):hover .step-title {
       background-size: 100% 0.14em;
