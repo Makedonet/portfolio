@@ -7,7 +7,7 @@ const telegram = contact("telegram");
 // На страницах кейсов разделы меню — на главной. Контакты есть внизу любой
 // страницы, поэтому эта ссылка остаётся на месте.
 const home = Astro.url.pathname === "/";
-const link = (href: string) => (home || href === "#contact" ? href : `/${href}`);
+const link = (href: string) => (home || href === "#contact" || href.startsWith("/") ? href : `/${href}`);
 ---
 
 <header class="sticky top-0 z-30 border-b border-transparent bg-paper/90 backdrop-blur-md" data-header>

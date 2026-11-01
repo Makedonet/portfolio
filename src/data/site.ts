@@ -62,5 +62,6 @@ export const contact = (id: Contact["id"]) => contacts.find((c) => c.id === id)!
 export const nav = [
   { href: "#works", label: "Работы" },
   { href: "#process", label: "Как работаю" },
+  { href: "/services/", label: "Что входит" },
   { href: "#contact", label: "Контакты" },
 ];

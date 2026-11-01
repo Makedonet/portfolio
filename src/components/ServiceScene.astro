@@ -1,0 +1,241 @@
+---
+// Сцена услуги в блоке «Что входит»: всё нарисовано кодом, вес блока — только
+// разметка. Разметка описывает последний кадр: так сцена выглядит без скрипта
+// и при «уменьшить движение». Начальное состояние и движение — scripts/services.ts.
+// Размеры в em от ширины сцены (холст 33.3×25 em), поэтому сцена одинакова и в
+// половине экрана, и в карточке на телефоне. Заказчик тот же, что в роликах
+// «Как работаю», - вымышленная пекарня «Корка».
+import type { Service } from "../data/services";
+
+interface Props {
+  scene: Service["scene"];
+}
+const { scene } = Astro.props;
+
+// Следы прыжка в сцене «Анимация» — по той же формуле, что и сама буханка:
+// падение с высоты 15 em и два отскока, 9 и 4 em. Доли времени — как в services.ts.
+// Кадры выбраны как в раскадровке: реже в верхней точке, обязательно в касании пола.
+const arcs = [
+  { from: 0, to: 0.25, height: 15, fall: true, frames: [0, 0.45, 0.72, 1] },
+  { from: 0.25, to: 0.7, height: 9, fall: false, frames: [0.2, 0.5, 0.8, 1] },
+  { from: 0.7, to: 1, height: 4, fall: false, frames: [0.5] },
+];
+const ghosts = arcs.flatMap((arc) =>
+  arc.frames.map((p) => {
+    const t = arc.from + p * (arc.to - arc.from);
+    // Отскок: вверх и вниз по параболе; падение — только её вторая половина.
+    const height = arc.fall ? arc.height * (1 - p * p) : arc.height * (1 - (2 * p - 1) ** 2);
+    return { t, left: 1.5 + t * 25, bottom: 2.5 + height };
+  }),
+);
+---
+
+<div class="scene" aria-hidden="true">
+  <div class={`scene-canvas scene-${scene}`} data-scene>
+    {
+      scene === "texts" && (
+        <div class="sc-sheet">
+          <p class="sc-water">
+            <span class="sc-strike">Наша динамично развивающаяся</span>
+            <span class="sc-strike">компания предлагает широкий</span>
+            <span class="sc-strike">ассортимент продукции</span>
+          </p>
+          <p class="sc-plain">
+            <span class="sc-mask"><span class="sc-line">Хлеб <span class="sc-mark">к утру</span></span></span>
+            <span class="sc-mask sc-mask-small"><span class="sc-line">Печём ночью, привозим к семи</span></span>
+          </p>
+        </div>
+      )
+    }
+
+    {
+      scene === "design" && (
+        <>
+          <div class="sc-device" data-w="s">
+            <div class="sc-device-bar">korka.ru</div>
+            <div class="sc-site">
+              <div class="sc-site-hero">
+                <div>
+                  <p class="sc-site-title">Хлеб<br />к утру</p>
+                  <p class="sc-site-btn">Заказать</p>
+                </div>
+                <svg class="sc-site-loaf"><use href="#sc-loaf" /></svg>
+              </div>
+              <div class="sc-site-tiles"><span /><span /><span /></div>
+            </div>
+          </div>
+          <p class="sc-sizes">
+            <span>Компьютер</span>
+            <span>Планшет</span>
+            <span class="is-on">Телефон</span>
+          </p>
+        </>
+      )
+    }
+
+    {
+      scene === "speed" && (
+        <div class="sc-gauge">
+          <svg viewBox="0 0 100 100">
+            <circle class="sc-gauge-track" cx="50" cy="50" r="46" />
+            <circle class="sc-gauge-value" cx="50" cy="50" r="46" pathLength="100" />
+          </svg>
+          <p class="sc-gauge-number">100</p>
+          <p class="sc-gauge-label">
+            скорость по оценке Google,
+            <br />
+            mc-project.ru на компьютере
+          </p>
+        </div>
+      )
+    }
+
+    {
+      scene === "leads" && (
+        <>
+          <div class="sc-form">
+            <p class="sc-field">
+              <span class="sc-field-label">Имя</span>
+              <span class="sc-type">Анна</span>
+            </p>
+            <p class="sc-field">
+              <span class="sc-field-label">Телефон</span>
+              <span class="sc-type">+7 900 000-00-00</span>
+            </p>
+            <p class="sc-consent">
+              <span class="sc-box">
+                <svg viewBox="0 0 24 24"><path d="M5 13l5 5L19 7" /></svg>
+              </span>
+              Согласие на обработку данных
+            </p>
+            <p class="sc-submit">Оставить заявку</p>
+          </div>
+          <div class="sc-message">
+            <p class="sc-message-title">Новая заявка</p>
+            <p>Анна, +7 900 000-00-00</p>
+            <p class="sc-message-to">В Telegram и на почту</p>
+          </div>
+        </>
+      )
+    }
+
+    {
+      scene === "stats" && (
+        <>
+          <div class="sc-snippet">
+            <p class="sc-snippet-title">Пекарня «Корка» - хлеб к утру</p>
+            <p class="sc-snippet-url">korka.ru</p>
+            <p class="sc-rich">
+              <span>Открыто до 22:00</span>
+              <span>ул. Хлебная, 1</span>
+              <span>Доставка за час</span>
+            </p>
+          </div>
+          <div class="sc-chart">
+            <p class="sc-chart-label">Звонки и заявки по дням</p>
+            <div class="sc-bars">
+              {[34, 52, 44, 68, 60, 86, 100].map((h) => (
+                <span style={`height:${h}%`} />
+              ))}
+            </div>
+          </div>
+        </>
+      )
+    }
+
+    {
+      scene === "launch" && (
+        <>
+          <svg class="sc-lock" viewBox="0 0 120 150">
+            <path class="sc-shackle" d="M34 74V44a26 26 0 0 1 52 0v30" />
+            <rect x="12" y="68" width="96" height="76" rx="14" />
+            <circle class="sc-keyhole" cx="60" cy="102" r="10" />
+          </svg>
+          <p class="sc-address"><span class="sc-type">korka.ru</span></p>
+          <p class="sc-checks">
+            {["Телефон", "Планшет", "Компьютер"].map((device) => (
+              <span class="sc-check">
+                <svg viewBox="0 0 24 24"><path d="M5 13l5 5L19 7" /></svg>
+                {device}
+              </span>
+            ))}
+          </p>
+        </>
+      )
+    }
+
+    {
+      scene === "care" && (
+        <>
+          <p class="sc-status">
+            <span class="sc-status-ok">Сайт работает</span>
+            <span class="sc-status-down">Сайт не открывается</span>
+          </p>
+          <svg class="sc-pulse" viewBox="0 0 300 100" fill="none">
+            <path class="sc-pulse-track" d="M0 60H300" />
+            <path class="sc-pulse-ok" pathLength="1" d="M0 60H30l6-28 8 50 6-22h40l6-28 8 50 6-22h30" />
+            <path class="sc-pulse-down" pathLength="1" d="M140 60l8 30h42l6-30" />
+            <path class="sc-pulse-ok" pathLength="1" d="M196 60h19l6-28 8 50 6-22h65" />
+          </svg>
+          <div class="sc-alert">
+            <p class="sc-alert-title">Вам писать не пришлось</p>
+            <p>Я узнал первым и всё исправил</p>
+          </div>
+        </>
+      )
+    }
+
+    {
+      scene === "redesign" && (
+        <div class="sc-browser">
+          <p class="sc-browser-bar">korka.ru/hleb</p>
+          <div class="sc-browser-page">
+            <div class="sc-old">
+              <p class="sc-old-title">Добро пожаловать на наш сайт!!!</p>
+              <p class="sc-old-menu">
+                <u>Главная</u> | <u>О нас</u> | <u>Продукция</u> | <u>Контакты</u>
+              </p>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Хлеб</td>
+                    <td>Батон</td>
+                    <td>Булка</td>
+                  </tr>
+                  <tr>
+                    <td>уточняйте</td>
+                    <td>уточняйте</td>
+                    <td>уточняйте</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="sc-old-note">Сайт лучше всего смотреть в разрешении 1024x768</p>
+            </div>
+            <div class="sc-new">
+              <div>
+                <p class="sc-site-title">Хлеб<br />к утру</p>
+                <p class="sc-site-btn">Заказать</p>
+              </div>
+              <svg class="sc-site-loaf"><use href="#sc-loaf" /></svg>
+            </div>
+            <span class="sc-seam" />
+          </div>
+        </div>
+      )
+    }
+
+    {
+      scene === "motion" && (
+        <>
+          {ghosts.map((g) => (
+            <span class="sc-ghost" data-t={g.t.toFixed(3)} style={`left:${g.left.toFixed(2)}em;bottom:${g.bottom.toFixed(2)}em`} />
+          ))}
+          <span class="sc-floor" />
+          <svg class="sc-ball">
+            <use href="#sc-loaf" />
+          </svg>
+        </>
+      )
+    }
+  </div>
+</div>

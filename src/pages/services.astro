@@ -1,0 +1,22 @@
+---
+// Что входит в работу под ключ: услуги и их анимированные сцены. С главной сюда
+// ведёт ссылка из блока «Пять шагов»: на самой главной это было бы повтором.
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Services from "../components/Services.astro";
+import Contact from "../components/Contact.astro";
+import Footer from "../components/Footer.astro";
+import { site } from "../data/site";
+---
+
+<Layout
+  title={`Что входит в работу под ключ | ${site.title}`}
+  description="Структура и тексты, дизайн, разработка, заявки, аналитика и SEO, запуск, поддержка, редизайн и анимация: всё, что нужно сайту, делает один человек."
+>
+  <Header />
+  <main id="main" tabindex="-1" class="outline-none">
+    <Services />
+    <Contact />
+  </main>
+  <Footer />
+</Layout>

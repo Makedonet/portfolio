@@ -2,31 +2,42 @@
 // пять серий, в которых один сайт проходит путь от разговора до запуска.
 // - Серия доиграла — включается следующая, после последней снова первая.
 //   Линия у идущего шага заполняется вслед за роликом.
-// - Нажатие на шаг сразу показывает его серию.
+// - Шаг выбирают нажатием на строку, кнопками под кадром и свайпом по кадру.
+//   Выбор снимает с паузы: человек попросил показать.
 // - Файл качается, когда кадр подходит к экрану; до того виден постер.
 // - Играет, только пока кадр на экране; вернулся на экран — серия с начала.
 // - Кнопка останавливает ролик: автодвижение дольше пяти секунд должно
-//   останавливаться (WCAG 2.2.2). С «экономией трафика» ролик сам не запускается,
-//   но кнопка его запустит.
-// animate = false — «уменьшить движение»: только постеры, их меняет нажатие на шаг.
+//   останавливаться (WCAG 2.2.2). С «экономией трафика» ролик сам не запускается.
+// animate = false — «уменьшить движение»: только постеры, их меняет выбор шага.
 
 type Clip = { root: HTMLElement; video: HTMLVideoElement; loaded: boolean };
 
 export function initClips(animate: boolean): () => void {
-  const frame = document.querySelector<HTMLElement>("[data-clip-frame]");
-  if (!frame) return () => {};
-  const clips: Clip[] = [...frame.querySelectorAll<HTMLElement>("[data-clip]")].map((root) => ({
-    root,
-    video: root.querySelector("video")!,
+  const root = document.querySelector<HTMLElement>("[data-steps]");
+  const frame = root?.querySelector<HTMLElement>("[data-clip-frame]");
+  if (!root || !frame) return () => {};
+  const clips: Clip[] = [...frame.querySelectorAll<HTMLElement>("[data-clip]")].map((el) => ({
+    root: el,
+    video: el.querySelector("video")!,
     loaded: false,
   }));
-  const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
+  const steps = [...root.querySelectorAll<HTMLElement>("[data-step]")];
   const stepButtons = steps.map((step) => step.querySelector<HTMLButtonElement>("[data-step-button]")!);
+  const names = steps.map((step) => step.querySelector(".step-title")?.textContent ?? "");
+  const count = root.querySelector("[data-clip-count]");
+  const name = root.querySelector("[data-clip-name]");
+  const toggleButton = root.querySelector<HTMLButtonElement>("[data-clip-toggle]")!;
 
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   let paused = Boolean(connection?.saveData);
   let visible = false;
   let current = 0;
+
+  const stops: Array<() => void> = [];
+  const on = <E extends Event>(target: EventTarget, type: string, listener: (event: E) => void) => {
+    target.addEventListener(type, listener as EventListener);
+    stops.push(() => target.removeEventListener(type, listener as EventListener));
+  };
 
   const load = (clip: Clip) => {
     if (clip.loaded) return;
@@ -61,42 +72,61 @@ export function initClips(animate: boolean): () => void {
       step.style.setProperty("--p", "0");
     });
     stepButtons.forEach((button, i) => (i === index ? button.setAttribute("aria-current", "step") : button.removeAttribute("aria-current")));
+    if (count) count.textContent = String(index + 1);
+    if (name) name.textContent = names[index] ?? "";
     sync();
   };
 
-  const clicks = stepButtons.map((button, i) => {
-    const onClick = () => show(i);
-    button.addEventListener("click", onClick);
-    return () => button.removeEventListener("click", onClick);
-  });
-  if (!animate) return () => clicks.forEach((stop) => stop());
-
-  const toggleButton = frame.querySelector<HTMLButtonElement>("[data-clip-toggle]")!;
   const drawButton = () => {
     const label = paused ? toggleButton.dataset.labelPlay : toggleButton.dataset.labelPause;
     if (label) toggleButton.setAttribute("aria-label", label);
     toggleButton.querySelector(".clip-pause")?.classList.toggle("hidden", paused);
     toggleButton.querySelector(".clip-play")?.classList.toggle("hidden", !paused);
+    root.classList.toggle("is-paused", paused);
   };
   drawButton();
-  const toggle = () => {
+
+  const pick = (index: number) => {
+    paused = false;
+    drawButton();
+    show((index + clips.length) % clips.length);
+  };
+  stepButtons.forEach((button, i) => on(button, "click", () => pick(i)));
+  on(root.querySelector("[data-clip-prev]")!, "click", () => pick(current - 1));
+  on(root.querySelector("[data-clip-next]")!, "click", () => pick(current + 1));
+
+  // Свайп по кадру. Вертикальный забирает браузер (touch-action: pan-y) и шлёт
+  // pointercancel, поэтому прокрутку это не трогает.
+  let swipe: { x: number; y: number } | null = null;
+  on<PointerEvent>(frame, "pointerdown", (event) => {
+    swipe = event.pointerType === "touch" ? { x: event.clientX, y: event.clientY } : null;
+  });
+  on(frame, "pointercancel", () => {
+    swipe = null;
+  });
+  on<PointerEvent>(frame, "pointerup", (event) => {
+    if (!swipe) return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    swipe = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) pick(current + (dx < 0 ? 1 : -1));
+  });
+
+  if (!animate) return () => stops.forEach((stop) => stop());
+
+  on(toggleButton, "click", () => {
     paused = !paused;
     drawButton();
     sync();
-  };
-  toggleButton.addEventListener("click", toggle);
+  });
 
-  // Ролик проявляется над постером, когда пошли кадры.
-  const reveal = (event: Event) => (event.target as HTMLVideoElement).classList.add("is-playing");
-  const advance = () => show((current + 1) % clips.length);
-  const track = (event: Event) => {
-    const video = event.target as HTMLVideoElement;
-    if (video === clips[current]!.video && video.duration) steps[current]?.style.setProperty("--p", String(video.currentTime / video.duration));
-  };
   clips.forEach(({ video }) => {
-    video.addEventListener("playing", reveal);
-    video.addEventListener("ended", advance);
-    video.addEventListener("timeupdate", track);
+    // Ролик проявляется над постером, когда пошли кадры.
+    on(video, "playing", () => video.classList.add("is-playing"));
+    on(video, "ended", () => show((current + 1) % clips.length));
+    on(video, "timeupdate", () => {
+      if (video === clips[current]!.video && video.duration) steps[current]?.style.setProperty("--p", String(video.currentTime / video.duration));
+    });
   });
 
   const near = new IntersectionObserver(
@@ -112,6 +142,7 @@ export function initClips(animate: boolean): () => void {
     ([entry]) => {
       if (!entry) return;
       visible = entry.intersectionRatio >= 0.5;
+      if (visible) root.classList.add("is-seen");
       const { video } = clips[current]!;
       if (entry.intersectionRatio === 0 && video.currentTime > 0) video.currentTime = 0;
       sync();
@@ -124,13 +155,7 @@ export function initClips(animate: boolean): () => void {
   return () => {
     near.disconnect();
     seen.disconnect();
-    clicks.forEach((stop) => stop());
-    toggleButton.removeEventListener("click", toggle);
-    clips.forEach(({ video }) => {
-      video.removeEventListener("playing", reveal);
-      video.removeEventListener("ended", advance);
-      video.removeEventListener("timeupdate", track);
-      video.pause();
-    });
+    stops.forEach((stop) => stop());
+    clips.forEach(({ video }) => video.pause());
   };
 }

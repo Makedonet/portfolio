@@ -11,6 +11,7 @@
 //   data-tilt + data-depth — наклон и глубина слоёв под курсором;
 //   .btn и data-magnetic — кнопка тянется за курсором, текст .btn перекатывается;
 //   data-progress — полоса прочитанного в шапке;
+//   data-services — услуги и их сцены (scripts/services.ts);
 //   data-contact-glow — пятно света за курсором в контактах;
 //   data-footer-name — имя в подвале, буквы набирают вес у курсора.
 // Визитка первого экрана, наклейки, подсказка у курсора, индекс работ и ролики
@@ -520,6 +521,9 @@ export function init() {
   const mm = gsap.matchMedia();
   mm.add(
     {
+      // Функция запускается, только если совпало хоть одно условие: без этого
+      // на телефоне с «уменьшить движение» не запустилось бы ничего.
+      always: "all",
       motion: "(prefers-reduced-motion: no-preference)",
       fine: "(hover: hover) and (pointer: fine)",
     },
@@ -545,6 +549,9 @@ export function init() {
       // медленном телефоне, и первое касание не ждёт. ctx.add — чтобы и то,
       // что создано позже, откатилось вместе с контекстом.
       void (async () => {
+        // Услуги — только на своей странице, главная этот код не качает.
+        const services = document.querySelector("[data-services]") ? await import("./services") : null;
+        if (cancelled) return;
         const onScreen = measureOnScreen();
         const tasks: Array<() => void> = [
           // Визитка — первым делом: она на первом экране и ждёт рук.
@@ -552,6 +559,9 @@ export function init() {
             if (badge) stops.push(initBadge(badge, true, fine), initStickers(badge.closest("section") ?? badge));
             if (fine) stops.push(initCursor());
           },
+          // Закреплённый блок услуг добавляет странице высоты — он раньше
+          // всех триггеров ниже него, тогда они сразу считаются с его учётом.
+          () => services?.initServices(),
           () => {
             header();
             progress();
