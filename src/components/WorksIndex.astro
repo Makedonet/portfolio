@@ -48,7 +48,10 @@ const rows = await Promise.all(
               class="index-thumb"
               data-vt={work.id}
             />
-            <span class="index-name" set:html={typo(work.title)} />
+            <span class="index-name">
+              {work.logo && <img src={work.logo.src} alt="" width="44" height="44" loading="lazy" decoding="async" class="index-logo" />}
+              <span set:html={typo(work.title)} />
+            </span>
             <span class="index-industry">{work.industry}</span>
             <span class="index-result" set:html={typo(work.highlight)} />
             <Icon name="arrow-right" class="index-arrow" />
@@ -118,6 +121,14 @@ const rows = await Promise.all(
     font-size: 1.75rem;
     font-weight: 700;
     line-height: 1.05;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  .index-logo {
+    flex: none;
+    width: 1em;
+    height: 1em;
   }
   .index-industry {
     grid-area: industry;
@@ -138,7 +149,7 @@ const rows = await Promise.all(
   /* Широкий экран: строка-таблица, миниатюры нет — её место занимает превью. */
   @media (min-width: 1024px) {
     .index-link {
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.6fr) minmax(0, 1.45fr) 1.5rem;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.45fr) minmax(0, 1.4fr) 1.5rem;
       grid-template-areas: "name industry result arrow";
       column-gap: 1.5rem;
       padding-block: 1.5rem;

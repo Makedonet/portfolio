@@ -17,6 +17,11 @@
 // Кадры для окон — в data/live.ts, их снимает с живых сайтов tools/capture-live.mjs.
 // На главной кейс — превью (WorkCard.astro): описание в пару строк и главные
 // цифры. Целиком он читается на своей странице, /works/<id>/.
+import type { ImageMetadata } from "astro";
+import logoShinomontazh from "../assets/logos/shinomontazh.svg";
+import logoMoyka from "../assets/logos/moyka.svg";
+import logoTi from "../assets/logos/ti-redesign.webp";
+
 /** Кадры «живых окон» — id из live.json (их снимает скрипт съёмки). */
 export type Screens = {
   /** Страницы сайта в окне браузера — по очереди, как переход по ссылкам. */
@@ -33,6 +38,8 @@ export type Metric = { value: string; label: string; visual?: Visual };
 export type Work = {
   id: string;
   title: string;
+  /** Логотип сайта, квадратный — в индексе работ слева от названия. */
+  logo?: ImageMetadata;
   /** Отрасль заказчика — для индекса работ под первым экраном. */
   industry: string;
   /** Что это за сайт — одной строкой под названием. */
@@ -104,6 +111,7 @@ export const works: Work[] = [
   {
     id: "shinomontazh",
     title: "Шиномонтаж на Народной, 55",
+    logo: logoShinomontazh,
     industry: "Шиномонтаж",
     kind: "Сайт шиномонтажа с двумя мастерскими в Санкт-Петербурге",
     status: { tone: "live", label: "Работает" },
@@ -133,6 +141,7 @@ export const works: Work[] = [
   {
     id: "moyka",
     title: "Мойка на Витебском",
+    logo: logoMoyka,
     industry: "Автомойка",
     kind: "Сайт мойки самообслуживания",
     status: { tone: "live", label: "Работает" },
@@ -159,6 +168,7 @@ export const works: Work[] = [
   {
     id: "ti-redesign",
     title: "Технологии инъектирования",
+    logo: logoTi,
     industry: "Строительство",
     kind: "Концепт редизайна главной страницы",
     status: { tone: "concept", label: "Концепт" },
