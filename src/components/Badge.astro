@@ -84,9 +84,12 @@ const photoImage = await variants(mountains, [320, 480, 640]);
       <circle cx="22" cy="22" r="18" fill="none" stroke="var(--color-ok)" stroke-width="4" stroke-linecap="round" stroke-dasharray="111.97 113.1" transform="rotate(-90 22 22)"></circle>
       <text x="22" y="22" dy="0.36em" text-anchor="middle" class="score-value">99</text>
     </svg>
-    {/* Знак Google — четырёхцветная «G» из брендбука Google. */}
+    {/* Среднее по PageSpeed на компьютере трёх работающих сайтов: mc-project 100
+        (28.10.2026), шиномонтаж 99 (02.11), мойка 98 (04.11). На телефоне
+        со счётчиком Метрики у шиномонтажа и мойки 90 и 93 (04.11).
+        Знак Google — четырёхцветная «G» из брендбука Google. */}
     <span class="score-label">
-      скорость<br />по&nbsp;оценке <span class="score-google">
+      средняя скорость<br />моих сайтов<br />по&nbsp;оценке <span class="score-google">
         <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
@@ -102,11 +105,12 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     </svg>
     <span class="code-label"><b>чистый код</b><br />без конструкторов<br />и&nbsp;шаблонов</span>
   </div>
-  <div class="sticker sticker-tg hidden sm:flex" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -6deg">
-    <svg viewBox="0 0 24 24" class="tg-plane" aria-hidden="true" focusable="false">
-      <path d="M21.5 4.3 2.9 11.5c-1.3.5-1.3 1.2-.2 1.6l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.9-1.4-1.6Z" fill="currentColor"></path>
+  {/* Ролики есть у шиномонтажа, мойки и в пяти шагах ниже на этой странице. */}
+  <div class="sticker sticker-video hidden sm:flex" aria-hidden="true" data-sticker data-cursor="Отклейте" style="--r: -6deg">
+    <svg viewBox="0 0 24 24" class="video-mark" aria-hidden="true" focusable="false">
+      <path d="M9 6.8v10.4a.8.8 0 0 0 1.2.7l8.3-5.2a.8.8 0 0 0 0-1.4l-8.3-5.2a.8.8 0 0 0-1.2.7Z" fill="currentColor"></path>
     </svg>
-    <span>Заявки<br />в&nbsp;Telegram</span>
+    <span>Ролики<br />о&nbsp;вашей услуге</span>
   </div>
 
   <div class="badge" role="group" aria-label="Визитка" data-badge-card data-cursor="Тяните или кликните">
@@ -740,7 +744,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     background: var(--color-accent);
     color: var(--color-ink);
   }
-  .sticker-tg {
+  .sticker-video {
     right: 0.5em;
     bottom: 3.5em;
     align-items: center;
@@ -753,13 +757,13 @@ const photoImage = await variants(mountains, [320, 480, 640]);
     font-weight: 700;
     line-height: 1.15;
   }
-  .tg-plane {
+  .video-mark {
     width: 2em;
     height: 2em;
-    padding: 0.35em;
+    padding: 0.3em;
     border-radius: 50%;
-    background: #2aabee;
-    color: #fff;
+    background: var(--color-ink);
+    color: var(--color-accent);
   }
   @media (min-width: 640px) {
     .sticker-seal {
@@ -771,7 +775,7 @@ const photoImage = await variants(mountains, [320, 480, 640]);
       right: 6%;
       top: 2em;
     }
-    .sticker-tg {
+    .sticker-video {
       right: 7%;
       bottom: 6em;
     }
@@ -792,8 +796,8 @@ const photoImage = await variants(mountains, [320, 480, 640]);
       right: -0.5em;
       top: calc(var(--hero-shift) + 3.4em);
     }
-    .sticker-tg {
-      right: -2.75em;
+    .sticker-video {
+      right: -2em;
       bottom: calc(var(--hero-spare) - var(--hero-shift) + 1.6em);
     }
     .sticker-code {
