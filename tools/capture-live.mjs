@@ -91,10 +91,13 @@ async function stitch(page, file, { width, height, vh, dpr, settle }) {
             el.dataset.captureHidden = "";
             el.style.setProperty("visibility", "hidden", "important");
           } else if (cs.position === "sticky") {
-            // Липкий блок внутри секции (заголовок у списка вопросов) попал бы
-            // в склейку несколько раз — ставим его на место.
+            // Липкий блок внутри секции (заголовок у списка вопросов, окно
+            // плеера шагов на шиномонтаже) попал бы в склейку несколько раз —
+            // ставим его на место. top тоже сбрасываем: у relative он сдвигает
+            // блок, и окно плеера съезжало вниз на свой отступ под шапку.
             el.dataset.captureUnstuck = "";
             el.style.setProperty("position", "relative", "important");
+            el.style.setProperty("top", "auto", "important");
           }
         }
       });
@@ -133,6 +136,7 @@ async function stitch(page, file, { width, height, vh, dpr, settle }) {
     }
     for (const el of document.querySelectorAll("[data-capture-unstuck]")) {
       el.style.removeProperty("position");
+      el.style.removeProperty("top");
       delete el.dataset.captureUnstuck;
     }
   });
