@@ -191,48 +191,48 @@
     "url": "shinomontazh-narodnaya-55.ru/pravka-diskov/",
     "device": "desktop",
     "width": 1440,
-    "height": 5971,
+    "height": 5851,
     "header": 97,
     "strip": 97,
     "stops": [
       803,
       1348,
       2289,
-      3256,
-      4185,
-      4805
+      3136,
+      4065,
+      4685
     ],
     "rawStops": [
       803,
       1348,
       2289,
-      3256,
-      4185,
-      4805
+      3136,
+      4065,
+      4685
     ]
   },
   "shino-hranenie-desktop": {
     "url": "shinomontazh-narodnaya-55.ru/hranenie-shin/",
     "device": "desktop",
     "width": 1440,
-    "height": 5571,
+    "height": 5509,
     "header": 97,
     "strip": 97,
     "stops": [
       803,
       1407,
-      2252,
-      2828,
-      3785,
-      4405
+      2190,
+      2766,
+      3723,
+      4343
     ],
     "rawStops": [
       803,
       1407,
-      2252,
-      2828,
-      3785,
-      4405
+      2190,
+      2766,
+      3723,
+      4343
     ]
   },
   "moyka-desktop": {
